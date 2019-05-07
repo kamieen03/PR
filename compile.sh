@@ -1,1 +1,1 @@
-mpic++ Hunter.cpp main.cpp
+mpic++ -pthread Communicator.cpp Hunter.cpp main.cpp

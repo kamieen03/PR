@@ -1,6 +1,13 @@
 #include <list>
 #include <utility>
 #include <random>
+#include <time.h>
+#include <mpi.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <math.h>
+#include <unistd.h>
+#include "Communicator.h"
 
 enum weaponType {NONE, KARABIN, MIECZ};
 enum State {NEW, WAITING_WEAPON, HUNTING, INJURED, DEAD, HOSPITALIZED, WAITING_CENTER};
@@ -13,7 +20,7 @@ class Hunter {
 	const int S = 10;		//liczba sanitariuszy
 	const int W = 10; 		//maksymalna waga bandersnatcha
 	const int T = 100; 		//pojemnosc centrum
-	const int N = 100;		//początkowa liczba procesów
+	int N;				//początkowa liczba procesów
 
 	//zmienne procesu
 	int nr;				//numer procesu
@@ -23,17 +30,21 @@ class Hunter {
 	int permissions;		//liczba otrzymanych zgód
 	enum State currentState;	//aktualny stan procesu
 	
-	//wektory na zigonorowane żądania (FIFO(?))
+	//listy na zigonorowane żądania (FIFO)
 	std::list<std::pair<int, char>> ignoredWeaponRequests;	//wektor na żądania o broń (nr procesu i 'K' lub 'M')
 	std::list<int> ignoredMedicRequests;			//wektor na żądania o sanitariusza (nr procesu)
 	std::list<int> ignoredCenterRequests;			//wektor na żądania o centrum (nr procesu)
-
+	
 	std::pair<int, float>** centerRequests;			//tablica wskaźników na wszystkie aktualne żądania o centrum
 								//	(waga bandersnatcha i priorytet procesu)
 	std::default_random_engine randGenerator;		//prywatny geberator liczb pseudolowoych
 
 	public:
-		Hunter(int nr);					//nr procesu
+		Communicator* cellphone;	//wątek komunikacyjny procesu
+
+		//metody zarządzajace polami danych obieku
+		//nie powinny zmieniać pola currentState (wyjątek - konstruktor)
+		Hunter(int N, int nr);					//nr procesu
 		~Hunter(void);
 
 		int getNr();
@@ -46,13 +57,12 @@ class Hunter {
 		float getPriority();				//oblicz aktualny priorytet procesu
 
 		weaponType drawNewWeaponType();			//wylosuj nowy typ broni
+		void setWeapon();
 		weaponType getWeaponType();
 
 		void incPermissions();				//zwiększ liczbę zgód o 1
+		void resetPermissions();			//wyzeruj liczbę zgód
 		int getPermissions();
-
-		void setState(State);				//ustaw stan
-		State getState();
 
 		void ignoreWeaponRequest(int, char);		//ignoredWeaponRequests
 		std::pair<int, char> deignoreWeaponRequest(int, char);
@@ -63,6 +73,22 @@ class Hunter {
 		void recordCenterRequest(int, int, float);	//centerRequests
 		void forgetCenterRequest(int);
 
+		//metody komunikacyjne i stanu
+		//mogą zmieniać currentState
+		void setState(State);				//ustaw stan
+		State getState();				//pobierz aktualny stan
+		void start();					//wykonaj przejście NEW -> WAITING_WEAPON,
+	       							//	rozpocznij wątek komunikacyjny
+		void requestWeapon();				//wyślij request o broń i czekaj na zgody
 		State hunt();					//poluj
+		void die();					//die
+		void requestMedic();				//wyślij request o sanitariusza i czekaj na zgody
+		void getHospitalized();				//sleep
+		void requestCenter();				//wyślij request o centrum i czekaj na zgody
+		
+		//główna pętla procesu
+		void mainLoop();
+		//sleep na rand() czasu
+		void randSleep();
 
 };
