@@ -7,9 +7,10 @@
 #include <pthread.h>
 #include <math.h>
 #include <unistd.h>
-#include "Communicator.h"
+#include "Sender.h"
+#include "Receiver.h"
+//#include "weapon.h"
 
-enum weaponType {NONE, KARABIN, MIECZ};
 enum State {NEW, WAITING_WEAPON, HUNTING, INJURED, DEAD, HOSPITALIZED, WAITING_CENTER};
 //std::discrete_distribution<int> HUNT_DISTRIBUTION {0, 0, 0, 15, 5, 0, 80};
 
@@ -40,7 +41,8 @@ class Hunter {
 	std::default_random_engine randGenerator;		//prywatny geberator liczb pseudolowoych
 
 	public:
-		Communicator* cellphone;	//wątek komunikacyjny procesu
+		Sender* sender;		//klasa do sysyłania wiadomości prze wątek główny
+		Receiver* receiver;	//wątek komunikacyjny procesu
 
 		//metody zarządzajace polami danych obieku
 		//nie powinny zmieniać pola currentState (wyjątek - konstruktor)
@@ -90,5 +92,6 @@ class Hunter {
 		void mainLoop();
 		//sleep na rand() czasu
 		void randSleep();
+		int randomWeight();	
 
 };

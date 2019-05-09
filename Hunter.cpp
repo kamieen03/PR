@@ -12,7 +12,8 @@ Hunter::Hunter(int N, int nr){
 	this -> weapon = weaponType(NONE);
 	this -> permissions = 0;
 	this -> currentState = State(NEW);
-	this -> Communicator = new Communicator();
+	this -> sender = new Sender();
+	this -> receiver = new Receiver();
 
 	this -> centerRequests = new std::pair<int, float>*[this->N];
 }
@@ -125,14 +126,14 @@ State Hunter::getState(){
 
 void Hunter::start(){
 	pthread t;
-	pthread_create(&t, NULL, this->cellphone->start(), NULL);
+	pthread_create(&t, NULL, this -> receiver -> start(), NULL);
 	this -> setState(State(WAITING_WEAPON));
 	return;	
 }
 
 void Hunter::requestWeapon(){
 	weaponType w = this -> drawNewWeaponType();
-	this -> cellphone -> broadcastWeaponRequest(w, &(this->P));
+	this -> sender -> broadcastWeaponRequest(w, this -> getPriority());
 	pause();	//czekamy na wakeup od wątku komunikacyjnego
 	this -> setWeapon(w);
 	this -> setState(State(HUNTING));
@@ -148,14 +149,15 @@ State Hunter::hunt(){
 }	
 
 void Hunter::die(){
-	this -> cellphone -> broadcastDeathMsg();
-	this -> cellphone -> broadcastWeaponRelease(this -> weapon);
+	this -> sender ->  broadcastDeathMsg();
+	this -> sender ->  broadcastWeaponRelease(this -> weapon);
 	pause();	//the final pause
 }
 
 
 void Hunter::requestMedic(){
-	this -> cellphone -> broadcastMedicRequest();
+	this -> sender -> broadcastWeaponRelease(this -> weapon);
+	this -> sender -> broadcastMedicRequest(this -> getPriority());
 	pause();	//czekamy na wakeup od wątku komunikacyjnego
 	this -> setState(State(HOSPITALIZED));
 	return;
@@ -163,6 +165,19 @@ void Hunter::requestMedic(){
 
 void Hunter::getHospitalized(){
 	this -> randSleep();
+	this -> sender -> broadcastMedicRelease();
+	this -> setState(State(WAITING_WEAPON));
+	return;
+}
+
+void Hunter::requestCenter(){
+	int w = this -> randomWeight();
+	this -> sender -> broadcastWeaponRelease(this -> weapon);
+	this -> sender -> broadcastCenterRequest(w, this -> getPriority());
+	pause();
+	this -> randSleep();
+	this -> sender -> broadcastCenterRelease(w);
+	this -> setState(State(WAITING_WEAPON));
 	return;
 }
 
@@ -202,4 +217,3 @@ void Hunter::mainLoop(){
 	}
 	return;
 }
-//TODO: implement requestCenter
