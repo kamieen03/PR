@@ -1,7 +1,7 @@
 #include "Hunter.h"
 
 
-std::discrete_distribution<int> HUNT_DISTRIBUTION {0, 0, 0, 15, 5, 0, 80};
+//std::discrete_distribution<int> HUNT_DISTRIBUTION {0, 0, 0, 15, 5, 0, 80};
 
 
 Hunter::Hunter(int N, int nr){
@@ -12,7 +12,7 @@ Hunter::Hunter(int N, int nr){
 	this -> weapon = weaponType(NONE);
 	this -> permissions = 0;
 	this -> currentState = State(NEW);
-	this -> sender = new Sender();
+	this -> sender = new Sender(N, nr);
 	this -> receiver = new Receiver();
 
 	this -> centerRequests = new std::pair<int, float>*[this->N];
@@ -63,7 +63,7 @@ void Hunter::incPermissions(){
 	this -> permissions++;
 }
 
-void resetPermissions(){
+void Hunter::resetPermissions(){
 	this -> permissions = 0;
 }
 
@@ -125,8 +125,8 @@ State Hunter::getState(){
 }
 
 void Hunter::start(){
-	pthread t;
-	pthread_create(&t, NULL, this -> receiver -> start(), NULL);
+	pthread_t t;
+	pthread_create(&t, NULL, this -> receiver -> start, NULL);
 	this -> setState(State(WAITING_WEAPON));
 	return;	
 }
@@ -185,9 +185,11 @@ void Hunter::randSleep(){
 	//sleep between 3 to 7 seconds
 	//with 1 milisecond resolution
 	int a = 3; int b = 7;
-	int time = a * pow(10, 9);
-	time += (int) pow(10, 6) * (rand()%((b-a)*1000));
-	nanosleep(time);
+
+	struct timespec ts1;
+	ts1.tv_sec = rand()%(b-a) + a;
+	ts1.tv_nsec = (rand()%1000) * pow(10, 6);
+	nanosleep(&ts1, NULL);
 	return;
 }
 

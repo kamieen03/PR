@@ -1,1 +1,1 @@
-mpic++ -pthread Sender.cpp Receiver.cpp Hunter.cpp main.cpp
+mpic++ -lpthread Sender.cpp Receiver.cpp Hunter.cpp main.cpp

@@ -1,17 +1,17 @@
+#include <stdio.h>
 #include <list>
 #include <utility>
 #include <random>
 #include <time.h>
 #include <mpi.h>
-#include <stdlib.h>
 #include <pthread.h>
 #include <math.h>
 #include <unistd.h>
 #include "Sender.h"
 #include "Receiver.h"
-//#include "weapon.h"
+#include "types.h"
 
-enum State {NEW, WAITING_WEAPON, HUNTING, INJURED, DEAD, HOSPITALIZED, WAITING_CENTER};
+//enum State {NEW, WAITING_WEAPON, HUNTING, INJURED, DEAD, HOSPITALIZED, WAITING_CENTER};
 //std::discrete_distribution<int> HUNT_DISTRIBUTION {0, 0, 0, 15, 5, 0, 80};
 
 class Hunter {
@@ -59,7 +59,7 @@ class Hunter {
 		float getPriority();				//oblicz aktualny priorytet procesu
 
 		weaponType drawNewWeaponType();			//wylosuj nowy typ broni
-		void setWeapon();
+		void setWeapon(weaponType);
 		weaponType getWeaponType();
 
 		void incPermissions();				//zwiększ liczbę zgód o 1
