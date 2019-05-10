@@ -38,17 +38,31 @@ typedef struct CenterRelease {
 
 //death
 typedef struct DeathMsg {
+	weaponType w;
 } DeathMsg;
 
 
 //deklaracje kodowań wiadomości
 const int W_REQ = 100;
 const int W_REL = 101;
+const int W_PER = 102;
 const int M_REQ = 200;
 const int M_REL = 201;
+const int M_PER = 202;
 const int C_REQ = 300;
 const int C_REL = 301;
+const int C_PER = 302;
 const int DEATH = 404;
+
+
+
+//stałe systemowe
+const int K_MAX = 10;	//liczba karabinów
+const int M_MAX = 10;	//liczba mieczy
+const int S_MAX = 10;	//liczba sanitariuszy
+const int W_MAX = 10;	//maksymalna waga bandersnatcha
+const int T_MAX = 100;	//pojmeność centrum
+
 
 //rozkład prawdopodobieństwa dla polowania
 //(kolejne stany typu State)

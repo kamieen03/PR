@@ -8,14 +8,20 @@ Hunter::Hunter(int N, int nr){
 	this -> N = N;
 	this -> nr = nr;
 	this -> P = N;
-	this -> clock = 0;
+	this -> clock = new int(0);
 	this -> weapon = weaponType(NONE);
-	this -> permissions = 0;
+	this -> permissions = new int(0);
 	this -> currentState = State(NEW);
-	this -> sender = new Sender(N, nr);
-	this -> receiver = new Receiver();
+	
+	this -> ignoredWeaponRequests = new std::list<std::pair<int, weaponType>>;
+	this -> ignoredMedicRequests = new std::list<int>;
+	this -> ignoredCenterRequests = new std::list<int>;
+	this -> centerRequests = new std::pair<int, float>*[N];
 
-	this -> centerRequests = new std::pair<int, float>*[this->N];
+	this -> sender = new Sender(N, nr, this -> ignoredWeaponRequests,
+			this -> ignoredMedicRequests, this -> ignoredCenterRequests,
+			this-> centerRequests);
+	this -> receiver = new Receiver();
 }
 
 int Hunter::getNr(){
@@ -33,15 +39,15 @@ int Hunter::getP(){
 
 
 void Hunter::incrementClock(){
-	this -> clock++;
+	*(this -> clock)++;
 }
 
 int Hunter::getClock(){
-	return this -> clock;
+	return *(this -> clock);
 }
 
 float Hunter::getPriority(){
-	return this -> clock + (float)this->nr/this->N; 
+	return this -> getClock() + (float)this->nr/this->N; 
 }
 
 
@@ -59,61 +65,56 @@ weaponType Hunter::getWeaponType(){
 }
 
 
-void Hunter::incPermissions(){
-	this -> permissions++;
-}
-
 void Hunter::resetPermissions(){
 	this -> permissions = 0;
 }
 
-int Hunter::getPermissions(){
-	return this -> permissions;
-}
 
 
-
-void Hunter::ignoreWeaponRequest(int nr, char weapon){
-	std::pair<int, char> req (nr, weapon);
-	this -> ignoredWeaponRequests.push_back(req);
-}
-
-std::pair<int, char> Hunter::deignoreWeaponRequest(int, char){
-	std::pair<int, char> req = this->ignoredWeaponRequests.front();
-	std::pair<int, char> req_copy (req);
-	this -> ignoredWeaponRequests.pop_front();
-	return req_copy;
-}
-
-void Hunter::ignoreMedicRequest(int nr){
-	this -> ignoredMedicRequests.push_back(nr);
-}
-
-int Hunter::deignoreMedicRequest(int){
-	int nr = this->ignoredMedicRequests.front();
-	this -> ignoredMedicRequests.pop_front();
-	return nr;
-}
-
-void Hunter::ignoreCenterRequest(int nr){
-	this -> ignoredCenterRequests.push_back(nr);
-}
-
-int Hunter::deignoreCenterRequest(int){
-	int nr = this->ignoredCenterRequests.front();
-	this -> ignoredCenterRequests.pop_front();
-	return nr;
-}
-
-void Hunter::recordCenterRequest(int nr, int weight, float priority){
-	std::pair<int, float>* req = new std::pair<int,float> (weight, priority);
-	this -> centerRequests[nr] = req;
-}
-
-void Hunter::forgetCenterRequest(int nr){
-	delete this->centerRequests[nr];
-	this -> centerRequests[nr] = NULL;
-}
+//nadmiarowy kod - część zaimplementowan już w Sender
+//ale Receiver też z korzysta z całości
+//void Hunter::ignoreWeaponRequest(int nr, char weapon){
+//	std::pair<int, char> req (nr, weapon);
+//	this -> ignoredWeaponRequests.push_back(req);
+//}
+//
+//std::pair<int, char> Hunter::deignoreWeaponRequest(int, char){
+//	std::pair<int, char> req = this->ignoredWeaponRequests.front();
+//	std::pair<int, char> req_copy (req);
+//	this -> ignoredWeaponRequests.pop_front();
+//	return req_copy;
+//}
+//
+//void Hunter::ignoreMedicRequest(int nr){
+//	this -> ignoredMedicRequests.push_back(nr);
+//}
+//
+//int Hunter::deignoreMedicRequest(int){
+//	int nr = this->ignoredMedicRequests.front();
+//	this -> ignoredMedicRequests.pop_front();
+//	return nr;
+//}
+//
+//void Hunter::ignoreCenterRequest(int nr){
+//	this -> ignoredCenterRequests.push_back(nr);
+//}
+//
+//int Hunter::deignoreCenterRequest(int){
+//	int nr = this->ignoredCenterRequests.front();
+//	this -> ignoredCenterRequests.pop_front();
+//	return nr;
+//}
+//
+//void Hunter::recordCenterRequest(int nr, int weight, float priority){
+//	std::pair<int, float>* req = new std::pair<int,float> (weight, priority);
+//	this -> centerRequests[nr] = req;
+//}
+//
+//void Hunter::forgetCenterRequest(int nr){
+//	delete this->centerRequests[nr];
+//	this -> centerRequests[nr] = NULL;
+//}
+//-----------------------------------------------------------------------
 
 
 void Hunter::setState(State s){
@@ -149,8 +150,8 @@ State Hunter::hunt(){
 }	
 
 void Hunter::die(){
-	this -> sender ->  broadcastDeathMsg();
-	this -> sender ->  broadcastWeaponRelease(this -> weapon);
+	//deathMsg zawiera info o zwalnianej broni
+	this -> sender -> broadcastDeathMsg(this -> weapon); 
 	pause();	//the final pause
 }
 
@@ -173,7 +174,7 @@ void Hunter::getHospitalized(){
 void Hunter::requestCenter(){
 	int w = this -> randomWeight();
 	this -> sender -> broadcastWeaponRelease(this -> weapon);
-	this -> sender -> broadcastCenterRequest(w, this -> getPriority());
+	this -> sender -> broadcastCenterRequest(w, this -> getPriority(), permissions);
 	pause();
 	this -> randSleep();
 	this -> sender -> broadcastCenterRelease(w);
