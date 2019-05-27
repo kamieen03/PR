@@ -8,10 +8,24 @@
 class Sender {
 	int nr;		//numer procesu
 	int N;		//liczba procesów w systemie
-	int* clock;
+	int clock;
 
-	std::pair<int, float>** centerRequests;			//współdzileone z Hunter i Receiver
 
+        //listy na zigonorowane żądania (FIFO)
+        std::list<std::pair<int, weaponType>>* ignoredWeaponRequests;   //wektor na żądania o broń (nr procesu i 'K' lub 'M')
+        std::list<int>* ignoredMedicRequests;                           //wektor na żądania o sanitariusza (nr procesu)
+        std::list<int>* ignoredCenterRequests;                          //wektor na żądania o centrum (nr procesu)
+
+        std::pair<int, float>** centerRequests;                         //tablica wskaźników na wszystkie aktualne żądania o centrum
+                                                                        //      (waga bandersnatcha i priorytet procesu)
+
+        pthread_mutex_t* iwrMutex;                              //mutexy na powyższe listy
+        pthread_mutex_t* imrMutex;                              //
+        pthread_mutex_t* icrMutex;                              //
+        pthread_mutex_t* crMutex;                               //
+
+
+	public:
 
 	void sendWeaponPermission(weaponType);		//wysyłane do jednego procesu wraz z WeponRelease
 	void sendMedicPermission();				//wysyłane do jednego procesu wraz z MedicRelease
@@ -21,10 +35,10 @@ class Sender {
 	int getNr() { return this -> nr; }
 	int getN() { return this -> N; }
 	void incClock();
+	void getClock();
+	double gerPriority();
 
-	public:
-		Sender(int size, int nr, std::list<std::pair<int, weaponType>>*, std::list<int>*, std::list<int>*,
-				std::pair<int, float>**);
+		Sender(int size, int nr);
 		void broadcastWeaponRequest(weaponType w, float p);
 		void broadcastWeaponRelease(weaponType w);
 		void broadcastMedicRequest(float p);

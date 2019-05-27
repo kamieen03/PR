@@ -8,19 +8,11 @@ Hunter::Hunter(int N, int nr){
 	this -> N = N;
 	this -> nr = nr;
 	this -> P = N;
-	this -> clock = new int(0);
 	this -> weapon = weaponType(NONE);
 	this -> permissions = new int(0);
 	this -> currentState = State(NEW);
-	
-	this -> ignoredWeaponRequests = new std::list<std::pair<int, weaponType>>;
-	this -> ignoredMedicRequests = new std::list<int>;
-	this -> ignoredCenterRequests = new std::list<int>;
-	this -> centerRequests = new std::pair<int, float>*[N];
 
-	this -> sender = new Sender(N, nr, this -> ignoredWeaponRequests,
-			this -> ignoredMedicRequests, this -> ignoredCenterRequests,
-			this-> centerRequests);
+	this -> sender = new Sender(N, nr);
 	this -> receiver = new Receiver();
 }
 
@@ -37,18 +29,6 @@ int Hunter::getP(){
 	return this -> P;
 }
 
-
-void Hunter::incrementClock(){
-	*(this -> clock)++;
-}
-
-int Hunter::getClock(){
-	return *(this -> clock);
-}
-
-float Hunter::getPriority(){
-	return this -> getClock() + (float)this->nr/this->N; 
-}
 
 
 weaponType Hunter::drawNewWeaponType(){

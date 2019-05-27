@@ -26,16 +26,10 @@ class Hunter {
 	int* permissions;		//wskaźnik na liczbę otrzymanych zgód
 	enum State currentState;	//aktualny stan procesu
 	
-	//listy na zigonorowane żądania (FIFO)
-	std::list<std::pair<int, weaponType>>* ignoredWeaponRequests;	//wektor na żądania o broń (nr procesu i 'K' lub 'M')
-	std::list<int>* ignoredMedicRequests;			//wektor na żądania o sanitariusza (nr procesu)
-	std::list<int>* ignoredCenterRequests;			//wektor na żądania o centrum (nr procesu)
-	
-	std::pair<int, float>** centerRequests;			//tablica wskaźników na wszystkie aktualne żądania o centrum
-								//	(waga bandersnatcha i priorytet procesu)
+
 	std::default_random_engine randGenerator;		//prywatny geberator liczb pseudolowoych
 
-	Sender* sender;		//klasa do sysyłania wiadomości prze wątek główny
+	Sender* sender;		//klasa do wysyłania wiadomości przez wątek główny
 	Receiver* receiver;	//wątek komunikacyjny procesu
 
 	//metody zarządzajace polami danych obieku
@@ -56,7 +50,6 @@ class Hunter {
 
 	void resetPermissions();			//wyzeruj liczbę zgód
 
-	//TODO: te funkcje powinny zostać zaimplementowane w klasie Receiver
 	//void ignoreWeaponRequest(int, char);		//ignoredWeaponRequests
 	//void ignoreMedicRequest(int);			//ignoredMedicRequests
 	//void ignoreCenterRequest(int);			//ignoredCenterRequests
