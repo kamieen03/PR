@@ -4,17 +4,17 @@ Sender::Sender(int size, int nr){
 	this -> N = size;
 	this -> nr = nr;
 
-        this -> clock = 0;
+	this -> clock = 0;
 
-        this -> ignoredWeaponRequests = new std::list<std::pair<int, weaponType>>;
-        this -> ignoredMedicRequests = new std::list<int>;
-        this -> ignoredCenterRequests = new std::list<int>;
-        this -> centerRequests = new std::pair<int, float>*[N];
+	this -> ignoredWeaponRequests = new std::list<std::pair<int, weaponType>>;
+	this -> ignoredMedicRequests = new std::list<int>;
+    this -> ignoredCenterRequests = new std::list<int>;
+    this -> centerRequests = new std::pair<int, float>*[N];
 
-        *(this -> iwrMutex) = PTHREAD_MUTEX_INITIALIZER;
-        *(this -> imrMutex) = PTHREAD_MUTEX_INITIALIZER;
-        *(this -> icrMutex) = PTHREAD_MUTEX_INITIALIZER;
-        *(this -> crMutex) = PTHREAD_MUTEX_INITIALIZER;
+    this -> iwrMutex = PTHREAD_MUTEX_INITIALIZER;
+    this -> imrMutex = PTHREAD_MUTEX_INITIALIZER;
+    this -> icrMutex = PTHREAD_MUTEX_INITIALIZER;
+    this -> crMutex = PTHREAD_MUTEX_INITIALIZER;
 }
 
 void Sender::broadcastWeaponRequest(weaponType w, float p){
@@ -179,7 +179,7 @@ void Sender::sendMedicPermission(int nr = -1) {
 
 //nr - nr procesu-adresata
 //permission_weight - waga z jaką wysłać zgodę
-void Sender::sendCenterPermission(int permission_weight) {
+void Sender::sendCenterPermission(int permission_weight, int nr = -1) {
     if(nr == -1) {
         pthread_mutex_lock(this -> imrMutex);
         if(this->ignoredCenterRequests.size() == 0){

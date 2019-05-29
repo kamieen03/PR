@@ -1,13 +1,9 @@
 #include "Hunter.h"
 
 
-//std::discrete_distribution<int> HUNT_DISTRIBUTION {0, 0, 0, 15, 5, 0, 80};
-
-
 Hunter::Hunter(int N, int nr){
 	this -> N = N;
 	this -> nr = nr;
-	this -> P = N;
 	this -> weapon = weaponType(NONE);
 	this -> permissions = new int(0);
 	this -> currentState = State(NEW);
@@ -15,21 +11,6 @@ Hunter::Hunter(int N, int nr){
 	this -> sender = new Sender(N, nr);
 	this -> receiver = new Receiver();
 }
-
-int Hunter::getNr(){
-	return this->nr;
-}
-
-
-void Hunter::decreaseP(){
-	this -> P--;
-}
-
-int Hunter::getP(){
-	return this -> P;
-}
-
-
 
 weaponType Hunter::drawNewWeaponType(){
 	weaponType w = static_cast<weaponType>(rand()%2 + 1);
@@ -40,69 +21,8 @@ void Hunter::setWeapon(weaponType w){
 	this -> weapon = w;
 }
 
-weaponType Hunter::getWeaponType(){
-	return this -> weapon;
-}
-
-
-void Hunter::resetPermissions(){
-	this -> permissions = 0;
-}
-
-
-
-//nadmiarowy kod - część zaimplementowan już w Sender
-//ale Receiver też z korzysta z całości
-//void Hunter::ignoreWeaponRequest(int nr, char weapon){
-//	std::pair<int, char> req (nr, weapon);
-//	this -> ignoredWeaponRequests.push_back(req);
-//}
-//
-//std::pair<int, char> Hunter::deignoreWeaponRequest(int, char){
-//	std::pair<int, char> req = this->ignoredWeaponRequests.front();
-//	std::pair<int, char> req_copy (req);
-//	this -> ignoredWeaponRequests.pop_front();
-//	return req_copy;
-//}
-//
-//void Hunter::ignoreMedicRequest(int nr){
-//	this -> ignoredMedicRequests.push_back(nr);
-//}
-//
-//int Hunter::deignoreMedicRequest(int){
-//	int nr = this->ignoredMedicRequests.front();
-//	this -> ignoredMedicRequests.pop_front();
-//	return nr;
-//}
-//
-//void Hunter::ignoreCenterRequest(int nr){
-//	this -> ignoredCenterRequests.push_back(nr);
-//}
-//
-//int Hunter::deignoreCenterRequest(int){
-//	int nr = this->ignoredCenterRequests.front();
-//	this -> ignoredCenterRequests.pop_front();
-//	return nr;
-//}
-//
-//void Hunter::recordCenterRequest(int nr, int weight, float priority){
-//	std::pair<int, float>* req = new std::pair<int,float> (weight, priority);
-//	this -> centerRequests[nr] = req;
-//}
-//
-//void Hunter::forgetCenterRequest(int nr){
-//	delete this->centerRequests[nr];
-//	this -> centerRequests[nr] = NULL;
-//}
-//-----------------------------------------------------------------------
-
-
 void Hunter::setState(State s){
 	this -> currentState = s;
-}
-
-State Hunter::getState(){
-	return this -> currentState;
 }
 
 void Hunter::start(){
