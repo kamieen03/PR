@@ -21,7 +21,7 @@ Hunter::Hunter(int N, int nr){
 	this -> sender = new Sender(N, nr, this -> ignoredWeaponRequests,
 			this -> ignoredMedicRequests, this -> ignoredCenterRequests,
 			this-> centerRequests);
-	this -> receiver = new Receiver();
+	//this -> receiver = new Receiver();
 }
 
 int Hunter::getNr(){
@@ -127,7 +127,7 @@ State Hunter::getState(){
 
 void Hunter::start(){
 	pthread_t t;
-	pthread_create(&t, NULL, this -> receiver -> start, NULL);
+	//pthread_create(&t, NULL, this -> receiver -> start, NULL);
 	this -> setState(State(WAITING_WEAPON));
 	return;	
 }
@@ -182,6 +182,10 @@ void Hunter::requestCenter(){
 	return;
 }
 
+Sender* Hunter::getSender() {
+    return this -> sender;
+}
+
 void Hunter::randSleep(){
 	//sleep between 3 to 7 seconds
 	//with 1 milisecond resolution
@@ -204,7 +208,7 @@ void Hunter::mainLoop(){
 			break;
 		case HUNTING:
 			this -> hunt();
-		      	break;
+			break;
 		case INJURED:
 			this -> requestMedic();
 			break;

@@ -6,18 +6,23 @@
 
 class Receiver {
 private:
-	Hunter * hunter;
+    int *permissions;
+    int P;
+    int *weaponCount;
+    weaponType *wType;
+	State *state;
+	Sender *sender;
 
     template <class T> void receive(T* data, MPI_Status* status);
-    void handleWeaponRequest(WeaponRequest *msg);
-    void handleWeaponRelease(WeaponRelease *msg);
-    void handleMedicRequest(MedicRequest *msg);
-    void handleMedicRelease(MedicRelease *msg);
-    void handleCentrumRequest(CenterRequest *msg);
-    void handleCentrumRelease(CenterRequest *msg);
-    void handelDeath(DeathMsg *msg);
+    void handleWeaponRequest(WeaponRequest msg, int sourceRank);
+    void handleWeaponRelease(WeaponRelease msg);
+    void handleMedicRequest(MedicRequest msg, int sourceRank);
+    void handleMedicRelease(MedicRelease msg);
+    void handleCentrumRequest(CenterRequest msg, int sourceRank);
+    void handleCentrumRelease(CenterRequest msg);
+    void handleDeath(DeathMsg msg);
 
 public:
-    explicit Receiver(Hunter *hunter);
+    Receiver(int N, int *permissions, weaponType *wType, int *weaponCount, State *state, Sender *sender);
 	void run();
 };

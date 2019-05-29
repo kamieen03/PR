@@ -48,11 +48,10 @@ class Hunter {
 
 	void incrementClock();				//zwiększ zegar procesu o 1
 	int getClock();
-	float getPriority();				//oblicz aktualny priorytet procesu
 
 	weaponType drawNewWeaponType();			//wylosuj nowy typ broni
 	void setWeapon(weaponType);
-	weaponType getWeaponType();
+
 
 	void resetPermissions();			//wyzeruj liczbę zgód
 
@@ -67,8 +66,6 @@ class Hunter {
 	//metody komunikacyjne i stanu
 	//mogą zmieniać currentState
 	void setState(State);				//ustaw stan
-	State getState();				//pobierz aktualny stan
-
 	void start();					//wykonaj przejście NEW -> WAITING_WEAPON,
 							//	rozpocznij wątek komunikacyjny
 	void requestWeapon();				//wyślij request o broń i czekaj na zgody
@@ -80,12 +77,16 @@ class Hunter {
 	
 	//sleep na rand() czasu
 	void randSleep();
-	int randomWeight();	
-
+	int randomWeight();
 	
 
-	public:
-		Hunter(int N, int nr);				//początkowa liczba procesów, nr procesu
-		//główna pętla procesu
-		void mainLoop();
+public:
+    Hunter(int N, int nr);				//początkowa liczba procesów, nr procesu
+    //główna pętla procesu
+    void mainLoop();
+    weaponType getWeaponType();
+    float getPriority();                //oblicz aktualny priorytet procesu
+    State getState();				//pobierz aktualny stan
+    Sender* getSender();
+    std::list<std::pair<int, weaponType>>* getIgnoredWeaponReq;
 };

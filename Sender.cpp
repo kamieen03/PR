@@ -112,26 +112,30 @@ void Sender::broadcastDeathMsg(weaponType w) {
 
 
 //w - broń zwolniona przez proces
-void Sender::sendWeaponPermission(weaponType w) {
-	auto iwr = this -> ignoredWeaponRequests;
-	for (auto it = iwr -> begin(); it != iwr -> end(); it++){
-		std::pair<int, weaponType> req = *it;
-		int nr = req.first; weaponType req_w = req.second; 
-		if (w == req_w){
-			iwr -> erase(it);
-			break;
-		}
-	}
+void Sender::sendWeaponPermission(weaponType w, int nr = -1) {
+    if (nr == -1) {
+        auto iwr = this->ignoredWeaponRequests;
+        for (auto it = iwr->begin(); it != iwr->end(); it++) {
+            std::pair<int, weaponType> req = *it;
+            int nr = req.first;
+            weaponType req_w = req.second;
+            if (w == req_w) {
+                iwr->erase(it);
+                break;
+            }
+        }
+}
 
 	int temp = 1;
         MPI_Send(&temp, 1, MPI_INT, nr, W_PER, MPI_COMM_WORLD);
-	return;
 }
 
 //nr - nr procesu-adresata
-void Sender::sendMedicPermission() {
+void Sender::sendMedicPermission(int nr = -1) {
+    if(nr == -1) {
         int nr = this->ignoredMedicRequests -> front();
         this -> ignoredWeaponRequests -> pop_front();
+    }
 
 	int temp = 1;
         MPI_Send(&temp, 1, MPI_INT, nr, M_PER, MPI_COMM_WORLD);
@@ -140,9 +144,11 @@ void Sender::sendMedicPermission() {
 
 //nr - nr procesu-adresata
 //permission_weight - waga z jaką wysłać zgodę
-void Sender::sendCenterPermission(int permission_weight) {
+void Sender::sendCenterPermission(int permission_weight, int nr = -1) {
+    if(nr == -1) {
         int nr = this->ignoredCenterRequests -> front();
         this -> ignoredCenterRequests -> pop_front();
+    }
 
 	int temp = permission_weight;
         MPI_Send(&temp, 1, MPI_INT, nr, C_PER, MPI_COMM_WORLD);
