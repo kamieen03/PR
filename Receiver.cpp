@@ -18,43 +18,52 @@ void Receiver::run(){
         case W_REQ:
             WeaponRequest wReq;
             this -> receive(&wReq, &status);
-            handleWeaponRequest(wReq, status.MPI_SOURCE);
+            this -> handleWeaponRequest(wReq, status.MPI_SOURCE);
             break;
         case W_REL:
             WeaponRelease wRel;
             this -> receive(&wRel, &status);
+            this -> handleWeaponRelease(status.MPI_SOURCE);
             break;
         case W_PER:
             int wPer;
             this -> receive(&wPer, &status);
+            this -> handleWeaponPermission();
             break;
         case M_REQ:
             MedicRequest mReq;
             this -> receive(&mReq, &status);
+            this -> handleMedicRequest(mReq, status.MPI_SOURCE);
             break;
         case M_REL:
             MedicRelease mRel;
             this -> receive(&mRel, &status);
+            this -> handleMedicRelease(status.MPI_SOURCE);
             break;
         case M_PER:
             int mPer;
             this -> receive(&mPer, &status);
+            this -> handleMedicPermission();
             break;
         case C_REQ:
             CenterRequest cReq;
             this -> receive(&cReq, &status);
+            this -> handleCenterRequest(cReq, status.MPI_SOURCE);
             break;
         case C_REL:
             CenterRelease cRel;
             this -> receive(&cRel, &status);
+            this -> handleCenterRelease(status.MPI_SOURCE);
             break;
         case C_PER:
             int cPer;
-            this -> receive(&cPer, &status)
+            this -> receive(&cPer, &status);
+            this -> handleCenterPermission(cPer);
             break;
         case DEATH:
             DeathMsg dMsg;
             this -> receive(&dMsg, &status);
+            this -> handleDeath(dMsg);
             break;
     }
 }
@@ -63,26 +72,34 @@ template <class T>void Receiver::receive(T* data, MPI_Status* status) {
     MPI_Recv(data, sizeof *data, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, status);
 }
 
+// WEAPON
 void Receiver::handleWeaponRequest(WeaponRequest msg, int sourceRank) {
     double priority = this->sender->getPriority();
 
     if(((*(this->state)) == WAITING_WEAPON and msg.p > priority ) or *(this->state) != WAITING_WEAPON){
         this->sender->sendWeaponPermission(msg.w, sourceRank);
-    }
-    else if((*(this->state) == WAITING_WEAPON and msg.p < priority)) {
+    }else if((*(this->state) == WAITING_WEAPON and msg.p < priority)) {
         this->sender->ignoredWeaponRequests->push_back(std::make_pair(sourceRank, msg.w));
     }
 }
 
-void Receiver::handleWeaponRelease(WeaponRelease msg) {
+void Receiver::handleWeaponPermission() {
+    int WEAPON_NUMBER = (*wType == KARABIN) ? K_MAX : M_MAX;
+
     (*permissions)++;
 
-    if(*permissions == this->P - (*this->weaponCount)) {
-        //TODO
+    if(*permissions >= this->P - WEAPON_NUMBER) {
+        //TODO Wake up thread
         *permissions = 0;
     }
 }
 
+void Receiver::handleWeaponRelease(int sourceRank) {
+    // Usuniecie z ignoredCeneterR
+}
+
+
+// MEDIC
 void Receiver::handleMedicRequest(MedicRequest msg, int sourceRank) {
     double priority = this->sender->getPriority();
 
@@ -93,16 +110,22 @@ void Receiver::handleMedicRequest(MedicRequest msg, int sourceRank) {
     }
 }
 
-void Receiver::handleMedicRelease(MedicRelease msg) {
+void Receiver::handleMedicPermission() {
     (*permissions)++;
 
-    if(*permissions == this->P - S_MAX) {
+    if(*permissions >= this->P - S_MAX) {
         //TODO
         *permissions = 0;
     }
 }
 
-void Receiver::handleCentrumRequest(CenterRequest msg, int sourceRank) {
+void Receiver::handleMedicRelease(int sourceRank) {
+    // Usunięcie z ignoredCenterRequests
+}
+
+
+// CENTER
+void Receiver::handleCenterRequest(CenterRequest msg, int sourceRank) {
     double priority = this->sender->getPriority();
 
     //TODO Nie wszystkie przypadki
@@ -114,26 +137,23 @@ void Receiver::handleCentrumRequest(CenterRequest msg, int sourceRank) {
     }
 }
 
-void Receiver::handleCentrumRelease(CenterRequest msg) {
-    (*permissions)++;
+void Receiver::handleCenterPermission(int weight){
+    *permissions += weight;
 
-    if(*permissions == this->P * W_MAX - T_MAX) {
+    if(*permissions >= this->P * W_MAX - T_MAX) {
         //TODO
         *permissions = 0;
     }
 }
 
-void Receiver::handleDeath(DeathMsg msg) {
-    this->P -= 1;
-
-    if(*(this->wType) == msg.w)
-        (*weaponCount)++;
+void Receiver::handleCenterRelease(int sourceRank) {
 }
 
 
+// DEATH
+void Receiver::handleDeath(DeathMsg msg) {
+    this->P -= 1;
 
-
-
-
-
-
+    if (*(this->wType) == msg.w)
+        (*weaponCount)++;
+}

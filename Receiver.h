@@ -14,12 +14,19 @@ private:
 	Sender *sender;
 
     template <class T> void receive(T* data, MPI_Status* status);
+
     void handleWeaponRequest(WeaponRequest msg, int sourceRank);
-    void handleWeaponRelease(WeaponRelease msg);
+    void handleWeaponPermission();
+    void handleWeaponRelease(int sourceRank);
+
     void handleMedicRequest(MedicRequest msg, int sourceRank);
-    void handleMedicRelease(MedicRelease msg);
-    void handleCentrumRequest(CenterRequest msg, int sourceRank);
-    void handleCentrumRelease(CenterRequest msg);
+    void handleMedicPermission();
+    void handleMedicRelease(int sourceRank);
+
+    void handleCenterRequest(CenterRequest msg, int sourceRank);
+    void handleCenterPermission(int weight);
+    void handleCenterRelease(int sourceRank);
+
     void handleDeath(DeathMsg msg);
 
 public:
