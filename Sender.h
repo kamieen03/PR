@@ -4,6 +4,7 @@
 #include <random>
 #include <list>
 #include "types.h"
+#include <pthread.h>
 
 class Sender {
 private:
@@ -26,16 +27,15 @@ private:
 
 
 public:
-	void sendWeaponPermission(weaponType, int nr);		    //wysyłane do jednego procesu wraz z WeponRelease
-	void sendMedicPermission(int nr);				        //wysyłane do jednego procesu wraz z MedicRelease
-	void sendCenterPermission(int perm_weight, int nr);		//wysyłane do jednego procesu wraz z CenterRelease
+	void sendWeaponPermission(weaponType, int nr = -1);		    //wysyłane do jednego procesu wraz z WeponRelease
+	void sendMedicPermission(int nr = -1);				        //wysyłane do jednego procesu wraz z MedicRelease
+	void sendCenterPermission(int perm_weight, int nr = -1);	//wysyłane do jednego procesu wraz z CenterRelease
 	int countCenterPermissions(float p);			//zliczanie zaraz prezd wysłaniem CenterRequest
 
 	int getNr() { return this -> nr; }
 	int getN() { return this -> N; }
-    void setCenterRequest(int nr, std::pair<int, float> req);
 	void incClock();
-	void getClock();
+	int getClock();
 	double getPriority();
 
 	Sender(int size, int nr);
