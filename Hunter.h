@@ -37,7 +37,6 @@ class Hunter {
 	void requestMedic();				//wyślij request o sanitariusza i czekaj na zgody
 	void getHospitalized();				//sleep
 	void requestCenter();				//wyślij request o centrum i czekaj na zgody
-	
 
 	void randSleep();                   //sleep na rand() czasu
 	int randomWeight();

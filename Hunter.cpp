@@ -77,6 +77,7 @@ void Hunter::requestCenter(){
 	this -> sender -> broadcastWeaponRelease(this -> weapon);
 	this -> sender -> broadcastCenterRequest(w, permissions);
 	pause();
+	this -> setState(IN_CENTER);
 	this -> randSleep();
 	this -> sender -> broadcastCenterRelease(w);
 	this -> setState(State(WAITING_WEAPON));
@@ -121,7 +122,7 @@ void Hunter::mainLoop(){
 			break;
 		case WAITING_CENTER:
 			this -> requestCenter();
-			break;	
+			break;
 	}
 	return;
 }

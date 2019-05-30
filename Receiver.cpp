@@ -139,11 +139,10 @@ void Receiver::handleMedicRelease(int sourceRank) {
 void Receiver::handleCenterRequest(CenterRequest msg, int sourceRank) {
     double priority = this->sender->getPriority();
 
-    //TODO Nie wszystkie przypadki
     if(((*(this->state)) == WAITING_CENTER and msg.p > priority ) or *(this->state) != WAITING_CENTER) {
         this->sender->sendCenterPermission(msg.w, sourceRank);
     }
-    else if((*(this->state) == WAITING_CENTER and msg.p < priority)){
+    else if((*(this->state) == WAITING_CENTER and msg.p < priority) or *(this->state) == IN_CENTER){
         this->sender->ignoreCenterRequest(sourceRank);
     }
 }
