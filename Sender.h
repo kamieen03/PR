@@ -22,6 +22,7 @@ private:
     pthread_mutex_t imrMutex;
     pthread_mutex_t icrMutex;
     pthread_mutex_t crMutex;
+    pthread_mutex_t clockMutex;
 
 
 public:
@@ -34,7 +35,7 @@ public:
 	int getN() { return this -> N; }
 	void incClock();
 	void getClock();
-	double gerPriority();
+	double getPriority();
 
 	Sender(int size, int nr);
 	void broadcastWeaponRequest(weaponType w, float p);
@@ -44,4 +45,13 @@ public:
 	int broadcastCenterRequest(int w, float p, int* permissions);
 	void broadcastCenterRelease(int w);
 	void broadcastDeathMsg(weaponType w);
+
+    void ignoreWeaponRequest(std::pair<int, weaponType> req);
+    void ignoreMedicRequest(int nr);
+    void ignoreCenterRequest(int nr);
+    void setCenterRequest(int nr, std::pair<int, float> req);
+
+    void removeIgnoredWeaponRequest(int nr);
+    void removeIgnoredMedicRequest(int nr);
+    void removeIgnoredCenterRequest(int nr);
 };

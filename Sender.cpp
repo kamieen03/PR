@@ -15,6 +15,7 @@ Sender::Sender(int size, int nr){
     this -> imrMutex = PTHREAD_MUTEX_INITIALIZER;
     this -> icrMutex = PTHREAD_MUTEX_INITIALIZER;
     this -> crMutex = PTHREAD_MUTEX_INITIALIZER;
+    this -> clockMutex = PTHREAD_MUTEX_INITIALIZER;
 }
 
 void Sender::broadcastWeaponRequest(weaponType w, float p){
@@ -212,7 +213,58 @@ int Sender::countCenterPermissions(float my_p){
 	return sum;
 }
 
-//TODO: mutexy na dostępach do zmiennych wsþółdzielonych
+
+//----------------------------Adding and setting lists------------------
+
+void Sender::ignoreWeaponRequest(std::pair<int, weaponType> req){
+    pthread_mutex_lock(this -> iwrMutex);
+    this -> ignoredWeaponRequests -> push_back(req);
+    pthread_mutex_unlock(this -> iwrMutex);
+}
+
+void Sender::ignoreMedicRequest(int nr){
+    pthread_mutex_lock(this -> imrMutex);
+    this -> ignoredMedicRequests -> push_back(nr);
+    pthread_mutex_unlock(this -> imrMutex);
+}
+
+void Sender::ignoreCenterRequest(int nr){
+    pthread_mutex_lock(this -> icrMutex);
+    this -> ignoredCenterRequests -> push_back(nr);
+    pthread_mutex_unlock(this -> icrMutex);
+}
+
+void Sender::SetCenterRequest(int nr, std::pair<int, float> req){
+    pthread_mutex_lock(this -> crMutex);
+    this -> centerRequests[nr] = req;
+    pthread_mutex_unlock(this -> crMutex);
+}
+
+//---------------------Remove requests from lists upon receiving release-------------------
+
+void removeIgnoredWeaponRequest(int nr){
+    pthread_mutex_lock(this -> iwrMutex);
+    this -> ignoredWeaponRequests -> remove_if([&nr](req) {req.first == nr}); 
+    pthread_mutex_unlock(this -> iwrMutex);
+}
+
+void removeIgnoredMedicRequest(int nr){
+    pthread_mutex_lock(this -> imrMutex);
+    this -> ignoredMedicRequests -> remove_if([&nr](req) {req == nr}); 
+    pthread_mutex_unlock(this -> imrMutex);
+}
+
+void removeIgnoredCenterRequest(int nr){
+    pthread_mutex_lock(this -> icrMutex);
+    this -> ignoredCenterRequests -> remove_if([&nr](req) {req == nr}); 
+    pthread_mutex_unlock(this -> icrMutex);
+
+    pthread_mutex_lock(this -> crMutex);
+    this -> centerRequests[nr] = nullptr;
+    pthread_mutex_unlock(this -> crMutex);
+}
+
+
 //DONE: zabezpieczyć funkcje sendPermission przed przypadkiem pustych list
 //TODO: update clock
 
