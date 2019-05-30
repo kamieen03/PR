@@ -2,15 +2,11 @@
 #include <stdio.h>
 #include <list>
 #include <utility>
-#include <random>
 #include <time.h>
 #include <mpi.h>
-#include <pthread.h>
 #include <math.h>
 #include <unistd.h>
-#include "Sender.h"
 #include "Receiver.h"
-#include "types.h"
 
 
 class Hunter {

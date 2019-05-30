@@ -9,7 +9,7 @@ Hunter::Hunter(int N, int nr){
 	this -> currentState = State(NEW);
 
 	this -> sender = new Sender(N, nr);
-	this -> receiver = new Receiver();
+	this -> receiver = new Receiver(N, permissions, &weapon, &currentState, sender);
 }
 
 weaponType Hunter::drawNewWeaponType(){
@@ -27,7 +27,8 @@ void Hunter::setState(State s){
 
 void Hunter::start(){
 	pthread_t t;
-	pthread_create(&t, NULL, this -> receiver -> start, NULL);
+    typedef void * (*THREADFUNCPTR)(void *);
+	pthread_create(&t, NULL, (THREADFUNCPTR) &Receiver::run, this -> receiver);
 	this -> setState(State(WAITING_WEAPON));
 	return;	
 }
@@ -80,6 +81,10 @@ void Hunter::requestCenter(){
 	this -> sender -> broadcastCenterRelease(w);
 	this -> setState(State(WAITING_WEAPON));
 	return;
+}
+
+int Hunter::randomWeight(){
+    return rand()%W_MAX + 1;
 }
 
 void Hunter::randSleep(){
