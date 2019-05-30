@@ -1,11 +1,10 @@
 #include "Receiver.h"
 
 
-Receiver::Receiver(int N, int *permissions, weaponType *wType, int *weaponCount, State *state, Sender *sender){
+Receiver::Receiver(int N, int *permissions, weaponType *wType, State *state, Sender *sender){
     this->P = N;
     this->permissions = permissions;
     this->wType = wType;
-    this->weaponCount = weaponCount;
     this->state = state;
 
     this->sender = sender;
