@@ -21,6 +21,7 @@ class Hunter {
     Receiver* receiver;	        //wątek komunikacyjny procesu
 
     std::default_random_engine randGenerator;		//prywatny geberator liczb pseudolowoych
+    std::discrete_distribution<int> HUNT_DISTRIBUTION {0, 0, 0, 15, 5, 0, 80};
 
 	weaponType drawNewWeaponType();			        //wylosuj nowy typ broni
 	void setWeapon(weaponType);

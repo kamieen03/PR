@@ -66,7 +66,5 @@ const int T_MAX = 100;	//pojmeność centrum
 
 
 //rozkład prawdopodobieństwa dla polowania
-//(kolejne stany typu State)
-std::discrete_distribution<int> HUNT_DISTRIBUTION {0, 0, 0, 15, 5, 0, 80};
 
 
