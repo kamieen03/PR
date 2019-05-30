@@ -116,15 +116,15 @@ void Sender::broadcastDeathMsg(weaponType w) {
 
 //------------------------------------Pomocnicze------------------------------------
 void Sender::incClock(){
-	pthread_mutex_lock(this -> clockMutex);
+	pthread_mutex_lock(&(this -> clockMutex));
 	this -> clock++;
-	pthread_mutex_unlock(this -> clockMutex);
+	pthread_mutex_unlock(&(this -> clockMutex));
 }
 
-void Sender::getClock(){
-	pthread_mutex_lock(this -> clockMutex);
+int Sender::getClock(){
+	pthread_mutex_lock(&(this -> clockMutex));
 	double clock = this -> clock;
-	pthread_mutex_unlock(this -> clockMutex);
+	pthread_mutex_unlock(&(this -> clockMutex));
 	return clock;
 }
 
@@ -138,11 +138,11 @@ double Sender::getPriority(){
 //---------------------------------Pozwolenia-------------------------------
 
 //w - broń zwolniona przez proces
-void Sender::sendWeaponPermission(weaponType w, int nr = -1) {
+void Sender::sendWeaponPermission(weaponType w, int nr) {
     if(nr == -1) {
-        pthread_mutex_lock(this -> iwrMutex);
-        if(this->ignoredWeaponRequests.size() == 0){
-            pthread_mutex_unlock(this -> iwrMutex);
+        pthread_mutex_lock(&(this -> iwrMutex));
+        if(this->ignoredWeaponRequests -> size() == 0){
+            pthread_mutex_unlock(&(this -> iwrMutex));
             return;
         }
         auto iwr = this -> ignoredWeaponRequests;
@@ -155,7 +155,7 @@ void Sender::sendWeaponPermission(weaponType w, int nr = -1) {
                 break;
             }
         }
-        pthread_mutex_unlock(this -> iwrMutex);
+        pthread_mutex_unlock(&(this -> iwrMutex));
 
     }
 
@@ -165,16 +165,16 @@ void Sender::sendWeaponPermission(weaponType w, int nr = -1) {
 }
 
 //nr - nr procesu-adresata
-void Sender::sendMedicPermission(int nr = -1) {
+void Sender::sendMedicPermission(int nr) {
     if(nr == -1) {
-        pthread_mutex_lock(this -> imrMutex);
-        if(this->ignoredMedicRequests.size() == 0){
-            pthread_mutex_unlock(this -> imrMutex);
+        pthread_mutex_lock(&(this -> imrMutex));
+        if(this->ignoredMedicRequests -> size() == 0){
+            pthread_mutex_unlock(&(this -> imrMutex));
             return;
         }
         int nr = this->ignoredMedicRequests -> front();
         this -> ignoredWeaponRequests -> pop_front();
-        pthread_mutex_unlock(this -> imrMutex);
+        pthread_mutex_unlock(&(this -> imrMutex));
 
     }
 	int temp = 1;
@@ -184,16 +184,16 @@ void Sender::sendMedicPermission(int nr = -1) {
 
 //nr - nr procesu-adresata
 //permission_weight - waga z jaką wysłać zgodę
-void Sender::sendCenterPermission(int permission_weight, int nr = -1) {
+void Sender::sendCenterPermission(int permission_weight, int nr) {
     if(nr == -1) {
-        pthread_mutex_lock(this -> imrMutex);
-        if(this->ignoredCenterRequests.size() == 0){
-            pthread_mutex_unlock(this -> icrMutex);
+        pthread_mutex_lock(&(this -> imrMutex));
+        if(this->ignoredCenterRequests -> size() == 0){
+            pthread_mutex_unlock(&(this -> icrMutex));
             return;
         }
         int nr = this->ignoredCenterRequests -> front();
         this -> ignoredCenterRequests -> pop_front();
-        pthread_mutex_unlock(this -> icrMutex);
+        pthread_mutex_unlock(&(this -> icrMutex));
     }
 
 	int temp = permission_weight;
@@ -207,13 +207,13 @@ int Sender::countCenterPermissions(float my_p){
 	std::pair<int, float>* cr;
 	int sum = 0;
 
-	pthread_mutex_lock(this -> crMutex);
+	pthread_mutex_lock(&(this -> crMutex));
 	for(int i = 0; i < this -> N; i++){
 		cr = this -> centerRequests[i];
 		if (cr -> second < my_p )
 			sum += W_MAX - cr -> first;
 	}
-	pthread_mutex_unlock(this -> crMutex);
+	pthread_mutex_unlock(&(this -> crMutex));
 	return sum;
 }
 
@@ -221,51 +221,57 @@ int Sender::countCenterPermissions(float my_p){
 //----------------------------Adding and setting lists------------------
 
 void Sender::ignoreWeaponRequest(std::pair<int, weaponType> req){
-    pthread_mutex_lock(this -> iwrMutex);
+    pthread_mutex_lock(&(this -> iwrMutex));
     this -> ignoredWeaponRequests -> push_back(req);
-    pthread_mutex_unlock(this -> iwrMutex);
+    pthread_mutex_unlock(&(this -> iwrMutex));
 }
 
 void Sender::ignoreMedicRequest(int nr){
-    pthread_mutex_lock(this -> imrMutex);
+    pthread_mutex_lock(&(this -> imrMutex));
     this -> ignoredMedicRequests -> push_back(nr);
-    pthread_mutex_unlock(this -> imrMutex);
+    pthread_mutex_unlock(&(this -> imrMutex));
 }
 
 void Sender::ignoreCenterRequest(int nr){
-    pthread_mutex_lock(this -> icrMutex);
+    pthread_mutex_lock(&(this -> icrMutex));
     this -> ignoredCenterRequests -> push_back(nr);
-    pthread_mutex_unlock(this -> icrMutex);
+    pthread_mutex_unlock(&(this -> icrMutex));
 }
 
-void Sender::SetCenterRequest(int nr, std::pair<int, float> req){
-    pthread_mutex_lock(this -> crMutex);
+void Sender::setCenterRequest(int nr, std::pair<int, float> req){
+    pthread_mutex_lock(&(this -> crMutex));
     this -> centerRequests[nr] = new std::pair<int, float> (req);
-    pthread_mutex_unlock(this -> crMutex);
+    pthread_mutex_unlock(&(this -> crMutex));
 }
 
 //---------------------Remove requests from lists upon receiving release-------------------
 
 void Sender::removeIgnoredWeaponRequest(int nr){
-    pthread_mutex_lock(this -> iwrMutex);
-    this -> ignoredWeaponRequests -> remove_if([&nr](req) {req.first == nr}); 
-    pthread_mutex_unlock(this -> iwrMutex);
+    pthread_mutex_lock(&(this -> iwrMutex));
+    this -> ignoredWeaponRequests -> remove_if([&nr]
+        (const std::pair<int, weaponType>& req) {return req.first == nr;}
+    ); 
+    pthread_mutex_unlock(&(this -> iwrMutex));
 }
 
 void Sender::removeIgnoredMedicRequest(int nr){
-    pthread_mutex_lock(this -> imrMutex);
-    this -> ignoredMedicRequests -> remove_if([&nr](req) {req == nr}); 
-    pthread_mutex_unlock(this -> imrMutex);
+    pthread_mutex_lock(&(this -> imrMutex));
+    this -> ignoredMedicRequests -> remove_if([&nr]
+        (const int& req) {return req == nr;}
+    ); 
+    pthread_mutex_unlock(&(this -> imrMutex));
 }
 
 void Sender::removeIgnoredCenterRequest(int nr){
-    pthread_mutex_lock(this -> icrMutex);
-    this -> ignoredCenterRequests -> remove_if([&nr](req) {req == nr}); 
-    pthread_mutex_unlock(this -> icrMutex);
+    pthread_mutex_lock(&(this -> icrMutex));
+    this -> ignoredCenterRequests -> remove_if([&nr]
+        (const int& req) {return req == nr;}
+    ); 
+    pthread_mutex_unlock(&(this -> icrMutex));
 
-    pthread_mutex_lock(this -> crMutex);
+    pthread_mutex_lock(&(this -> crMutex));
     this -> centerRequests[nr] = nullptr;
-    pthread_mutex_unlock(this -> crMutex);
+    pthread_mutex_unlock(&(this -> crMutex));
 }
 
 
