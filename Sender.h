@@ -33,6 +33,7 @@ public:
 
 	int getNr() { return this -> nr; }
 	int getN() { return this -> N; }
+    void setCenterRequest(int nr, std::pair<int, float> req);
 	void incClock();
 	void getClock();
 	double getPriority();

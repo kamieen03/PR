@@ -29,6 +29,8 @@ void Sender::broadcastWeaponRequest(weaponType w, float p){
 	return;
 }
 
+
+//---------------------------Broadcasty - requesty i releasy-----------------------------
 void Sender::broadcastWeaponRelease(weaponType w) {
 	WeaponRelease wr = { .w = w };
 	size_t size = sizeof wr;
@@ -111,6 +113,8 @@ void Sender::broadcastDeathMsg(weaponType w) {
 	return;
 }
 
+
+//------------------------------------Pomocnicze------------------------------------
 void Sender::incClock(){
 	pthread_mutex_lock(this -> clockMutex);
 	this -> clock++;
@@ -131,7 +135,7 @@ double Sender::getPriority(){
 
 
 
-
+//---------------------------------Pozwolenia-------------------------------
 
 //w - broń zwolniona przez proces
 void Sender::sendWeaponPermission(weaponType w, int nr = -1) {
@@ -236,25 +240,25 @@ void Sender::ignoreCenterRequest(int nr){
 
 void Sender::SetCenterRequest(int nr, std::pair<int, float> req){
     pthread_mutex_lock(this -> crMutex);
-    this -> centerRequests[nr] = req;
+    this -> centerRequests[nr] = new std::pair<int, float> (req);
     pthread_mutex_unlock(this -> crMutex);
 }
 
 //---------------------Remove requests from lists upon receiving release-------------------
 
-void removeIgnoredWeaponRequest(int nr){
+void Sender::removeIgnoredWeaponRequest(int nr){
     pthread_mutex_lock(this -> iwrMutex);
     this -> ignoredWeaponRequests -> remove_if([&nr](req) {req.first == nr}); 
     pthread_mutex_unlock(this -> iwrMutex);
 }
 
-void removeIgnoredMedicRequest(int nr){
+void Sender::removeIgnoredMedicRequest(int nr){
     pthread_mutex_lock(this -> imrMutex);
     this -> ignoredMedicRequests -> remove_if([&nr](req) {req == nr}); 
     pthread_mutex_unlock(this -> imrMutex);
 }
 
-void removeIgnoredCenterRequest(int nr){
+void Sender::removeIgnoredCenterRequest(int nr){
     pthread_mutex_lock(this -> icrMutex);
     this -> ignoredCenterRequests -> remove_if([&nr](req) {req == nr}); 
     pthread_mutex_unlock(this -> icrMutex);
@@ -265,6 +269,5 @@ void removeIgnoredCenterRequest(int nr){
 }
 
 
-//DONE: zabezpieczyć funkcje sendPermission przed przypadkiem pustych list
 //TODO: update clock
 
