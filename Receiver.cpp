@@ -11,7 +11,7 @@ Receiver::Receiver(int N, int *permissions, weaponType *wType, State *state, Sen
     this->isRunning = false;
 }
 
-void Receiver::run(){
+void* Receiver::run(void* args){
     MPI_Status status;
     isRunning = true;
 

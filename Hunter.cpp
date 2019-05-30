@@ -9,7 +9,7 @@ Hunter::Hunter(int N, int nr){
 	this -> currentState = State(NEW);
 
 	this -> sender = new Sender(N, nr);
-	this -> receiver = new Receiver();
+	this -> receiver = new Receiver(N, permissions, &weapon, &currentState, sender);
 }
 
 weaponType Hunter::drawNewWeaponType(){
@@ -27,14 +27,15 @@ void Hunter::setState(State s){
 
 void Hunter::start(){
 	pthread_t t;
-	pthread_create(&t, NULL, this -> receiver -> start, NULL);
+    typedef void * (*THREADFUNCPTR)(void *);
+	pthread_create(&t, NULL, (THREADFUNCPTR) &Receiver::run, this -> receiver);
 	this -> setState(State(WAITING_WEAPON));
 	return;	
 }
 
 void Hunter::requestWeapon(){
 	weaponType w = this -> drawNewWeaponType();
-	this -> sender -> broadcastWeaponRequest(w, this -> getPriority());
+	this -> sender -> broadcastWeaponRequest(w);
 	pause();	//czekamy na wakeup od wątku komunikacyjnego
 	this -> setWeapon(w);
 	this -> setState(State(HUNTING));
@@ -58,7 +59,7 @@ void Hunter::die(){
 
 void Hunter::requestMedic(){
 	this -> sender -> broadcastWeaponRelease(this -> weapon);
-	this -> sender -> broadcastMedicRequest(this -> getPriority());
+	this -> sender -> broadcastMedicRequest();
 	pause();	//czekamy na wakeup od wątku komunikacyjnego
 	this -> setState(State(HOSPITALIZED));
 	return;
@@ -74,15 +75,18 @@ void Hunter::getHospitalized(){
 void Hunter::requestCenter(){
 	int w = this -> randomWeight();
 	this -> sender -> broadcastWeaponRelease(this -> weapon);
-	this -> sender -> broadcastCenterRequest(w, this -> getPriority(), permissions);
+	this -> sender -> broadcastCenterRequest(w, permissions);
 	pause();
 	this -> setState(IN_CENTER);
 	this -> randSleep();
-    this -> sender -> broadcastCenterRelease(w);
-    this -> setState(State(WAITING_WEAPON));
+	this -> sender -> broadcastCenterRelease(w);
+	this -> setState(State(WAITING_WEAPON));
 	return;
 }
 
+int Hunter::randomWeight(){
+    return rand()%W_MAX + 1;
+}
 
 void Hunter::randSleep(){
 	//sleep between 3 to 7 seconds

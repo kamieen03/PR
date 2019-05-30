@@ -1,5 +1,4 @@
 #pragma once
-#include "types.h"
 #include "Sender.h"
 #include <mpi.h>
 
@@ -31,6 +30,6 @@ private:
 
 public:
     Receiver(int N, int *permissions, weaponType *wType, State *state, Sender *sender);
-	void run();
+	void* run(void*);
     void stopReceiving();
 };

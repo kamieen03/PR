@@ -1,4 +1,5 @@
 #pragma once
+#include <random>
 
 //deklaracje typów
 enum weaponType {NONE, KARABIN, MIECZ};
