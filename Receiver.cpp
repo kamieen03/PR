@@ -7,70 +7,82 @@ Receiver::Receiver(int N, int *permissions, weaponType *wType, int *weaponCount,
     this->wType = wType;
     this->weaponCount = weaponCount;
     this->state = state;
+
     this->sender = sender;
+    this->isRunning = false;
 }
 
 void Receiver::run(){
     MPI_Status status;
-    MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+    isRunning = true;
 
-    switch(status.MPI_TAG) {
-        case W_REQ:
-            WeaponRequest wReq;
-            this -> receive(&wReq, &status);
-            this -> handleWeaponRequest(wReq, status.MPI_SOURCE);
-            break;
-        case W_REL:
-            WeaponRelease wRel;
-            this -> receive(&wRel, &status);
-            this -> handleWeaponRelease(status.MPI_SOURCE);
-            break;
-        case W_PER:
-            int wPer;
-            this -> receive(&wPer, &status);
-            this -> handleWeaponPermission();
-            break;
-        case M_REQ:
-            MedicRequest mReq;
-            this -> receive(&mReq, &status);
-            this -> handleMedicRequest(mReq, status.MPI_SOURCE);
-            break;
-        case M_REL:
-            MedicRelease mRel;
-            this -> receive(&mRel, &status);
-            this -> handleMedicRelease(status.MPI_SOURCE);
-            break;
-        case M_PER:
-            int mPer;
-            this -> receive(&mPer, &status);
-            this -> handleMedicPermission();
-            break;
-        case C_REQ:
-            CenterRequest cReq;
-            this -> receive(&cReq, &status);
-            this -> handleCenterRequest(cReq, status.MPI_SOURCE);
-            break;
-        case C_REL:
-            CenterRelease cRel;
-            this -> receive(&cRel, &status);
-            this -> handleCenterRelease(status.MPI_SOURCE);
-            break;
-        case C_PER:
-            int cPer;
-            this -> receive(&cPer, &status);
-            this -> handleCenterPermission(cPer);
-            break;
-        case DEATH:
-            DeathMsg dMsg;
-            this -> receive(&dMsg, &status);
-            this -> handleDeath(dMsg);
-            break;
+    while(isRunning) {
+        MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+
+        switch(status.MPI_TAG) {
+            case W_REQ:
+                WeaponRequest wReq;
+                this -> receive(&wReq, &status);
+                this -> handleWeaponRequest(wReq, status.MPI_SOURCE);
+                break;
+            case W_REL:
+                WeaponRelease wRel;
+                this -> receive(&wRel, &status);
+                this -> handleWeaponRelease(status.MPI_SOURCE);
+                break;
+            case W_PER:
+                int wPer;
+                this -> receive(&wPer, &status);
+                this -> handleWeaponPermission();
+                break;
+            case M_REQ:
+                MedicRequest mReq;
+                this -> receive(&mReq, &status);
+                this -> handleMedicRequest(mReq, status.MPI_SOURCE);
+                break;
+            case M_REL:
+                MedicRelease mRel;
+                this -> receive(&mRel, &status);
+                this -> handleMedicRelease(status.MPI_SOURCE);
+                break;
+            case M_PER:
+                int mPer;
+                this -> receive(&mPer, &status);
+                this -> handleMedicPermission();
+                break;
+            case C_REQ:
+                CenterRequest cReq;
+                this -> receive(&cReq, &status);
+                this -> handleCenterRequest(cReq, status.MPI_SOURCE);
+                break;
+            case C_REL:
+                CenterRelease cRel;
+                this -> receive(&cRel, &status);
+                this -> handleCenterRelease(status.MPI_SOURCE);
+                break;
+            case C_PER:
+                int cPer;
+                this -> receive(&cPer, &status);
+                this -> handleCenterPermission(cPer);
+                break;
+            case DEATH:
+                DeathMsg dMsg;
+                this -> receive(&dMsg, &status);
+                this -> handleDeath(dMsg);
+                break;
+        }
+
     }
 }
 
 template <class T>void Receiver::receive(T* data, MPI_Status* status) {
     MPI_Recv(data, sizeof *data, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, status);
 }
+
+void Receiver::stopReceiving() {
+    this->isRunning = false;
+}
+
 
 // WEAPON
 void Receiver::handleWeaponRequest(WeaponRequest msg, int sourceRank) {
@@ -79,7 +91,7 @@ void Receiver::handleWeaponRequest(WeaponRequest msg, int sourceRank) {
     if(((*(this->state)) == WAITING_WEAPON and msg.p > priority ) or *(this->state) != WAITING_WEAPON){
         this->sender->sendWeaponPermission(msg.w, sourceRank);
     }else if((*(this->state) == WAITING_WEAPON and msg.p < priority)) {
-        this->sender->ignoredWeaponRequests->push_back(std::make_pair(sourceRank, msg.w));
+        this->sender->ignoreWeaponRequest(std::make_pair(sourceRank, msg.w));
     }
 }
 
@@ -95,7 +107,7 @@ void Receiver::handleWeaponPermission() {
 }
 
 void Receiver::handleWeaponRelease(int sourceRank) {
-    // Usuniecie z ignoredCeneterR
+    this->sender->removeIgnoredWeaponRequest(sourceRank);
 }
 
 
@@ -106,7 +118,7 @@ void Receiver::handleMedicRequest(MedicRequest msg, int sourceRank) {
     if(((*(this->state)) == INJURED and msg.p > priority ) or *(this->state) != INJURED) {
         this->sender->sendMedicPermission(sourceRank);
     }else if((*(this->state) == INJURED and msg.p < priority)) {
-        this->sender->ignoredMedicRequests->push_back(sourceRank);
+        this->sender->ignoreMedicRequest(sourceRank);
     }
 }
 
@@ -120,7 +132,7 @@ void Receiver::handleMedicPermission() {
 }
 
 void Receiver::handleMedicRelease(int sourceRank) {
-    // Usunięcie z ignoredCenterRequests
+    this->sender->removeIgnoredMedicRequest(sourceRank);
 }
 
 
@@ -133,7 +145,7 @@ void Receiver::handleCenterRequest(CenterRequest msg, int sourceRank) {
         this->sender->sendCenterPermission(msg.w, sourceRank);
     }
     else if((*(this->state) == WAITING_CENTER and msg.p < priority)){
-        this->sender->ignoredCenterRequests->push_back(sourceRank);
+        this->sender->ignoreCenterRequest(sourceRank);
     }
 }
 
@@ -147,13 +159,11 @@ void Receiver::handleCenterPermission(int weight){
 }
 
 void Receiver::handleCenterRelease(int sourceRank) {
+    this->sender->removeIgnoredCenterRequest(sourceRank);
 }
 
 
 // DEATH
 void Receiver::handleDeath(DeathMsg msg) {
-    this->P -= 1;
-
-    if (*(this->wType) == msg.w)
-        (*weaponCount)++;
+    (this->P)--;
 }

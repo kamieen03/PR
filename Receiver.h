@@ -12,8 +12,10 @@ private:
     weaponType *wType;
 	State *state;
 	Sender *sender;
+	bool isRunning;
 
     template <class T> void receive(T* data, MPI_Status* status);
+    void stopReceiving();
 
     void handleWeaponRequest(WeaponRequest msg, int sourceRank);
     void handleWeaponPermission();
