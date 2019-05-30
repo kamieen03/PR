@@ -34,7 +34,7 @@ void Hunter::start(){
 
 void Hunter::requestWeapon(){
 	weaponType w = this -> drawNewWeaponType();
-	this -> sender -> broadcastWeaponRequest(w, this -> getPriority());
+	this -> sender -> broadcastWeaponRequest(w);
 	pause();	//czekamy na wakeup od wątku komunikacyjnego
 	this -> setWeapon(w);
 	this -> setState(State(HUNTING));
@@ -58,7 +58,7 @@ void Hunter::die(){
 
 void Hunter::requestMedic(){
 	this -> sender -> broadcastWeaponRelease(this -> weapon);
-	this -> sender -> broadcastMedicRequest(this -> getPriority());
+	this -> sender -> broadcastMedicRequest();
 	pause();	//czekamy na wakeup od wątku komunikacyjnego
 	this -> setState(State(HOSPITALIZED));
 	return;
@@ -74,7 +74,7 @@ void Hunter::getHospitalized(){
 void Hunter::requestCenter(){
 	int w = this -> randomWeight();
 	this -> sender -> broadcastWeaponRelease(this -> weapon);
-	this -> sender -> broadcastCenterRequest(w, this -> getPriority(), permissions);
+	this -> sender -> broadcastCenterRequest(w, permissions);
 	pause();
 	this -> randSleep();
 	this -> sender -> broadcastCenterRelease(w);

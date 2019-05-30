@@ -18,7 +18,8 @@ Sender::Sender(int size, int nr){
     this -> clockMutex = PTHREAD_MUTEX_INITIALIZER;
 }
 
-void Sender::broadcastWeaponRequest(weaponType w, float p){
+void Sender::broadcastWeaponRequest(weaponType w){
+    float p = this -> getPriority();
 	WeaponRequest wr = { .w = w, .p = p };	
 	size_t size = sizeof wr;
 	int N = this -> getN();
@@ -44,7 +45,8 @@ void Sender::broadcastWeaponRelease(weaponType w) {
 }	
 
 
-void Sender::broadcastMedicRequest(float p){
+void Sender::broadcastMedicRequest(){
+    float p = this -> getPriority();
 	MedicRequest mr = { .p = p };	
 	size_t size = sizeof mr;
 	int N = this -> getN();
@@ -73,7 +75,8 @@ void Sender::broadcastMedicRelease() {
 //p - priorytet tego procesu
 //permissions - przeazana zmienna, do której zapiszemy zliczone zgody
 //return - łączna waga pozwoleń uzyskanych ze zliczania w tablicy
-int Sender::broadcastCenterRequest(int w, float p, int* permissions){
+int Sender::broadcastCenterRequest(int w, int* permissions){
+    float p = this -> getPriority();
 	CenterRequest cr = { .w = w, .p = p };	
 	size_t size = sizeof cr;
 	int granted_permissions = this -> countCenterPermissions(p);

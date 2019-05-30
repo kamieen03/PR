@@ -39,11 +39,11 @@ public:
 	double getPriority();
 
 	Sender(int size, int nr);
-	void broadcastWeaponRequest(weaponType w, float p);
+	void broadcastWeaponRequest(weaponType w);
 	void broadcastWeaponRelease(weaponType w);
-	void broadcastMedicRequest(float p);
+	void broadcastMedicRequest();
 	void broadcastMedicRelease();
-	int broadcastCenterRequest(int w, float p, int* permissions);
+	int broadcastCenterRequest(int w, int* permissions);
 	void broadcastCenterRelease(int w);
 	void broadcastDeathMsg(weaponType w);
 
