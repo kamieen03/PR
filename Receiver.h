@@ -11,6 +11,7 @@ private:
 	State *state;
 	Sender *sender;
 	bool isRunning;
+	pthread_mutex_t *sleep_mutex;
 
     template <class T> void receive(T* data, MPI_Status* status);
 
@@ -29,7 +30,7 @@ private:
     void handleDeath(DeathMsg msg);
 
 public:
-    Receiver(int N, int *permissions, weaponType *wType, State *state, Sender *sender);
+    Receiver(int N, int *permissions, weaponType *wType, State *state, Sender *sender, pthread_mutex_t *sleep_mutex);
 	void* run(void*);
     void stopReceiving();
 };

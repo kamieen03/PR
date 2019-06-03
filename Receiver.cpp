@@ -1,11 +1,12 @@
 #include "Receiver.h"
 
 
-Receiver::Receiver(int N, int *permissions, weaponType *wType, State *state, Sender *sender){
+Receiver::Receiver(int N, int *permissions, weaponType *wType, State *state, Sender *sender, pthread_mutex_t *sleep_mutex){
     this->P = N;
     this->permissions = permissions;
     this->wType = wType;
     this->state = state;
+    this->sleep_mutex = sleep_mutex;
 
     this->sender = sender;
     this->isRunning = false;
@@ -72,10 +73,11 @@ void* Receiver::run(void* args){
         }
 
     }
+
+
 }
 
 template <class T>void Receiver::receive(T* data, MPI_Status* status) {
-    //std::cout <<sizeof *data << std::endl;
     MPI_Recv(data, sizeof data, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, status);
 }
 
