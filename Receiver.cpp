@@ -24,16 +24,19 @@ void* Receiver::run(void* args){
                 WeaponRequest wReq;
                 this -> receive(&wReq, &status);
                 this -> handleWeaponRequest(wReq, status.MPI_SOURCE);
+                Printer::print({Printer::state2str(*state), "- WEAPON REQUEST na ", Printer::weapon2str(*wType)}, status.MPI_SOURCE);
                 break;
             case W_REL:
                 WeaponRelease wRel;
                 this -> receive(&wRel, &status);
                 this -> handleWeaponRelease(status.MPI_SOURCE);
+                Printer::print({Printer::state2str(*state), "- WEAPON RELEASE na ", Printer::weapon2str(*wType)}, status.MPI_SOURCE);
                 break;
             case W_PER:
                 int wPer;
                 this -> receive(&wPer, &status);
                 this -> handleWeaponPermission();
+                Printer::print({Printer::state2str(*state), "- WEAPON PERMISSION na ", Printer::weapon2str(*wType)}, status.MPI_SOURCE);
                 break;
             case M_REQ:
                 MedicRequest mReq;
@@ -106,6 +109,8 @@ void Receiver::handleWeaponPermission() {
         pthread_mutex_unlock(sleep_mutex);
         *permissions = 0;
     }
+
+
 }
 
 void Receiver::handleWeaponRelease(int sourceRank) {
