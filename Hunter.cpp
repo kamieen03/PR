@@ -8,7 +8,7 @@ Hunter::Hunter(int N, int nr){
 	this -> weapon = weaponType(NONE);
 	this -> permissions = new int(0);
 	this -> currentState = State(NEW);
-    this -> sleep_mutex = PTHREAD_MUTEx_INITIALIZER;
+    this -> sleep_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 	this -> sender = new Sender(N, nr);
 	this -> receiver = new Receiver(N, permissions, &weapon, &currentState, sender, &(this->sleep_mutex));

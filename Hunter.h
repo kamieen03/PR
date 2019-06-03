@@ -23,7 +23,7 @@ class Hunter {
 
     std::default_random_engine randGenerator;		//prywatny geberator liczb pseudolowoych
     std::discrete_distribution<int> HUNT_DISTRIBUTION {0, 0, 0, 15, 5, 0, 80};
-    pthrad_mutex_t sleep_mutex;
+    pthread_mutex_t sleep_mutex;
 
 	weaponType drawNewWeaponType();			        //wylosuj nowy typ broni
 	void setWeapon(weaponType);
