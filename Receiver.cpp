@@ -103,7 +103,6 @@ void Receiver::handleWeaponPermission() {
     (*permissions)++;
 
     if(*permissions >= this->P - WEAPON_NUMBER) {
-        //TODO Wake up thread
         *permissions = 0;
     }
 }
@@ -128,7 +127,7 @@ void Receiver::handleMedicPermission() {
     (*permissions)++;
 
     if(*permissions >= this->P - S_MAX) {
-        //TODO
+        pthread_mutex_unlock(sleep_mutex);
         *permissions = 0;
     }
 }
@@ -154,7 +153,7 @@ void Receiver::handleCenterPermission(int weight){
     *permissions += weight;
 
     if(*permissions >= this->P * W_MAX - T_MAX) {
-        //TODO
+        pthread_mutex_unlock(sleep_mutex);
         *permissions = 0;
     }
 }
