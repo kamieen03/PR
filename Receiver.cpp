@@ -103,6 +103,7 @@ void Receiver::handleWeaponPermission() {
     (*permissions)++;
 
     if(*permissions >= this->P - WEAPON_NUMBER) {
+        pthread_mutex_unlock(sleep_mutex);
         *permissions = 0;
     }
 }
