@@ -75,7 +75,8 @@ void* Receiver::run(void* args){
 }
 
 template <class T>void Receiver::receive(T* data, MPI_Status* status) {
-    MPI_Recv(data, sizeof *data, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, status);
+    //std::cout <<sizeof *data << std::endl;
+    MPI_Recv(data, sizeof data, MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, status);
 }
 
 void Receiver::stopReceiving() {
