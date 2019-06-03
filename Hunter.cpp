@@ -1,4 +1,5 @@
 #include "Hunter.h"
+#define forever while(1)
 
 
 Hunter::Hunter(int N, int nr){
@@ -101,28 +102,31 @@ void Hunter::randSleep(){
 }
 
 void Hunter::mainLoop(){
-	switch(this -> currentState) {
-		case NEW: 
-			this -> start();
-			break;
-		case WAITING_WEAPON:
-			this -> requestWeapon();
-			break;
-		case HUNTING:
-			this -> hunt();
-			break;
-		case INJURED:
-			this -> requestMedic();
-			break;
-		case DEAD:
-			this -> die();
-			break;
-		case HOSPITALIZED:
-			this -> getHospitalized();
-			break;
-		case WAITING_CENTER:
-			this -> requestCenter();
-			break;
-	}
+    forever{
+        Printer::print(Printer::state2str(this->currentState), this -> nr);
+        switch(this -> currentState) {
+            case NEW: 
+                this -> start();
+                break;
+            case WAITING_WEAPON:
+                this -> requestWeapon();
+                break;
+            case HUNTING:
+                this -> hunt();
+                break;
+            case INJURED:
+                this -> requestMedic();
+                break;
+            case DEAD:
+                this -> die();
+                break;
+            case HOSPITALIZED:
+                this -> getHospitalized();
+                break;
+            case WAITING_CENTER:
+                this -> requestCenter();
+                break;
+        }
+    }
 	return;
 }
