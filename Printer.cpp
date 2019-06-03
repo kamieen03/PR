@@ -1,6 +1,6 @@
 #include "Printer.h"
 void Printer::print(std::string msg, int nr){
-    std::cout << "\033[0;3" << nr <<"m Process " << nr << ": " << msg << std::endl;
+    std::cout << "\033[1;3" << nr <<"m Process " << nr << ": " << msg << std::endl;
 }
 
 std::string Printer::state2str(enum State val){
