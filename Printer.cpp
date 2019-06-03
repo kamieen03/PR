@@ -1,6 +1,9 @@
 #include "Printer.h"
-void Printer::print(std::string msg, int nr){
-    std::cout << "\033[1;3" << nr <<"m Process " << nr << ": " << msg << std::endl;
+void Printer::print(const std::list<std::string> &args, int nr){
+    std::cout << "\033[1;3" << nr <<"mProcess " << nr << ": ";
+    for(auto &msg: args)
+        std::cout << msg << " ";
+    std::cout << std::endl;
 }
 
 std::string Printer::state2str(enum State val){
@@ -12,6 +15,14 @@ std::string Printer::state2str(enum State val){
     "HOSPITALIZED",
     "WAITING_CENTER",
     "IN_CENTER"
+    };
+    return s[val];
+}
+
+std::string Printer::weapon2str(enum weaponType val){
+    std::string s[] = {"NONE",
+    "KARABIN",
+    "MIECZ"
     };
     return s[val];
 }

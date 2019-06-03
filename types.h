@@ -58,11 +58,11 @@ const int DEATH = 404;
 
 
 //stałe systemowe
-const int K_MAX = 10;	//liczba karabinów
-const int M_MAX = 10;	//liczba mieczy
-const int S_MAX = 10;	//liczba sanitariuszy
+const int K_MAX = 2;	//liczba karabinów
+const int M_MAX = 2;	//liczba mieczy
+const int S_MAX = 4;	//liczba sanitariuszy
 const int W_MAX = 10;	//maksymalna waga bandersnatcha
-const int T_MAX = 100;	//pojmeność centrum
+const int T_MAX = 20;	//pojmeność centrum
 
 
 //rozkład prawdopodobieństwa dla polowania

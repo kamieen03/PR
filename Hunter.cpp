@@ -37,6 +37,8 @@ void Hunter::start(){
 
 void Hunter::requestWeapon(){
 	weaponType w = this -> drawNewWeaponType();
+    Printer::print(Printer::state2str(this->currentState), this -> nr);
+    Printer::print(Printer::weapon2str(w), this->nr);
 	this -> sender -> broadcastWeaponRequest(w);
     pthread_mutex_lock(& this -> sleep_mutex); //czekamy na wakeup od wątku komunikacyjnego
     pthread_mutex_lock(& this -> sleep_mutex);
@@ -110,27 +112,33 @@ void Hunter::randSleep(){
 
 void Hunter::mainLoop(){
     forever{
-        Printer::print(Printer::state2str(this->currentState), this -> nr);
         switch(this -> currentState) {
             case NEW: 
+                Printer::print(Printer::state2str(this->currentState), this -> nr);
                 this -> start();
                 break;
             case WAITING_WEAPON:
                 this -> requestWeapon();
                 break;
             case HUNTING:
+                Printer::print(Printer::state2str(this->currentState), this -> nr);
+                Printer::print(Printer::weapon2str(this->weapon), this->nr);
                 this -> hunt();
                 break;
             case INJURED:
+                Printer::print(Printer::state2str(this->currentState), this -> nr);
                 this -> requestMedic();
                 break;
             case DEAD:
+                Printer::print(Printer::state2str(this->currentState), this -> nr);
                 this -> die();
                 break;
             case HOSPITALIZED:
+                Printer::print(Printer::state2str(this->currentState), this -> nr);
                 this -> getHospitalized();
                 break;
             case WAITING_CENTER:
+                Printer::print(Printer::state2str(this->currentState), this -> nr);
                 this -> requestCenter();
                 break;
         }
