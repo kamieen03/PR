@@ -37,6 +37,7 @@ void Sender::broadcastWeaponRelease(weaponType w) {
 	size_t size = sizeof wr;
 	int N = this -> getN();
 	int nr = this -> getNr();
+    Printer::print(std::string("release weapon"), nr);
 	for(int i = 0; i < N; i++)
 		if (i != nr)
 			MPI_Send(&wr, size, MPI_BYTE, i, W_REL, MPI_COMM_WORLD);

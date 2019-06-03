@@ -5,6 +5,7 @@
 #include <list>
 #include "types.h"
 #include <pthread.h>
+#include "Printer.h"
 
 class Sender {
 private:
