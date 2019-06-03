@@ -6,5 +6,6 @@
 class Printer{
 public:
     static void print(std::string msg, int nr);
+
 };
 
