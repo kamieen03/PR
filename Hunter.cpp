@@ -37,13 +37,13 @@ void Hunter::start(){
 
 void Hunter::requestWeapon(){
 	weaponType w = this -> drawNewWeaponType();
+	this -> setWeapon(w);
     Printer::print({Printer::state2str(this->currentState),
         Printer::weapon2str(w)}, this->nr);
 	this -> sender -> broadcastWeaponRequest(w);
     pthread_mutex_lock(& this -> sleep_mutex); //czekamy na wakeup od wątku komunikacyjnego
     pthread_mutex_lock(& this -> sleep_mutex);
     pthread_mutex_unlock(& this -> sleep_mutex);
-	this -> setWeapon(w);
 	this -> setState(State(HUNTING));
 	return;
 }
@@ -80,19 +80,28 @@ void Hunter::getHospitalized(){
 	return;
 }
 
-void Hunter::requestCenter(){
+int Hunter::requestCenter(){
 	int w = this -> randomWeight();
+    printf("1\n");
 	this -> sender -> broadcastWeaponRelease(this -> weapon);
+    printf("2\n");
 	this -> sender -> broadcastCenterRequest(w, permissions);
+    printf("3\n");
     pthread_mutex_lock(& this -> sleep_mutex); //czekamy na wakeup od wątku komunikacyjnego
     pthread_mutex_lock(& this -> sleep_mutex);
     pthread_mutex_unlock(& this -> sleep_mutex);
-	this -> setState(IN_CENTER);
+
+	this -> setState(State(WAITING_WEAPON));
+	return w;
+}
+
+void Hunter::visitCenter(int w){
 	this -> randSleep();
 	this -> sender -> broadcastCenterRelease(w);
 	this -> setState(State(WAITING_WEAPON));
 	return;
 }
+
 
 int Hunter::randomWeight(){
     return rand()%W_MAX + 1;
@@ -101,7 +110,7 @@ int Hunter::randomWeight(){
 void Hunter::randSleep(){
 	//sleep between 3 to 7 seconds
 	//with 1 milisecond resolution
-	int a = 3; int b = 7;
+	int a = 1; int b = 2;
 
 	struct timespec ts1;
 	ts1.tv_sec = rand()%(b-a) + a;
@@ -111,11 +120,14 @@ void Hunter::randSleep(){
 }
 
 void Hunter::mainLoop(){
+    int w = -1;
     forever{
+        this -> sender -> incClock();
         switch(this -> currentState) {
             case NEW: 
                 Printer::print({Printer::state2str(this->currentState)}, this -> nr);
                 this -> start();
+                sleep(1);
                 break;
             case WAITING_WEAPON:
                 this -> requestWeapon();
@@ -139,7 +151,11 @@ void Hunter::mainLoop(){
                 break;
             case WAITING_CENTER:
                 Printer::print({Printer::state2str(this->currentState)}, this -> nr);
-                this -> requestCenter();
+                w = this -> requestCenter();
+                break;
+            case IN_CENTER:
+                Printer::print({Printer::state2str(this->currentState)}, this -> nr);
+                this -> visitCenter(w);
                 break;
         }
     }

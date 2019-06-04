@@ -14,8 +14,12 @@ typedef struct WeaponRequest {
 
 typedef struct WeaponRelease {
 	weaponType w;
+    float p;
 } WeaponRelease;
 
+typedef struct WeaponPermission {
+    float p;
+} WeaponPermission;
 
 //medic
 typedef struct MedicRequest {
@@ -23,8 +27,12 @@ typedef struct MedicRequest {
 } MedicRequest;
 
 typedef struct MedicRelease {
+    float p;
 } MedicRelease;
 
+typedef struct MedicPermission {
+    float p;
+} MedicPermission;
 
 //center
 typedef struct CenterRequest {
@@ -34,12 +42,18 @@ typedef struct CenterRequest {
 
 typedef struct CenterRelease {
 	int w;
+    float p;
 } CenterRelease;
 
+typedef struct CenterPermission {
+    int w;
+    float p;
+} CenterPermission;
 
 //death
 typedef struct DeathMsg {
 	weaponType w;
+    float p;
 } DeathMsg;
 
 
@@ -63,8 +77,4 @@ const int M_MAX = 2;	//liczba mieczy
 const int S_MAX = 4;	//liczba sanitariuszy
 const int W_MAX = 10;	//maksymalna waga bandersnatcha
 const int T_MAX = 20;	//pojmeność centrum
-
-
-//rozkład prawdopodobieństwa dla polowania
-
 

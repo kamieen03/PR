@@ -38,7 +38,8 @@ class Hunter {
 	void die();					        //die
 	void requestMedic();				//wyślij request o sanitariusza i czekaj na zgody
 	void getHospitalized();				//sleep
-	void requestCenter();				//wyślij request o centrum i czekaj na zgody
+	int requestCenter();				//wyślij request o centrum i czekaj na zgody
+    void visitCenter(int w);            //idź na jakiś czas do centrum
 
 	void randSleep();                   //sleep na rand() czasu
 	int randomWeight();

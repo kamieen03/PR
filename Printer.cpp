@@ -1,6 +1,6 @@
 #include "Printer.h"
-void Printer::print(const std::list<std::string> &args, int nr){
-    std::cout << "\033[1;3" << nr <<"mProcess " << nr << ": ";
+void Printer::print(const std::list<std::string> args, int nr){
+    printf("\033[1;3%dmProcess %d: ", nr, nr);
     for(auto &msg: args)
         std::cout << msg << " ";
     std::cout << std::endl;

@@ -5,68 +5,91 @@ Sender::Sender(int size, int nr){
 	this -> nr = nr;
 
 	this -> clock = 0;
+    this -> current_req_p = 0;
 
 	this -> ignoredWeaponRequests = new std::list<std::pair<int, weaponType>>;
 	this -> ignoredMedicRequests = new std::list<int>;
     this -> ignoredCenterRequests = new std::list<int>;
     this -> centerRequests = new std::pair<int, float>*[N];
+    for(int i = 0; i < N; i++) this-> centerRequests[i] = nullptr;
 
     this -> iwrMutex = PTHREAD_MUTEX_INITIALIZER;
     this -> imrMutex = PTHREAD_MUTEX_INITIALIZER;
     this -> icrMutex = PTHREAD_MUTEX_INITIALIZER;
     this -> crMutex = PTHREAD_MUTEX_INITIALIZER;
     this -> clockMutex = PTHREAD_MUTEX_INITIALIZER;
+    this -> mpi_mutex = PTHREAD_MUTEX_INITIALIZER;
 }
 
+//---------------------------Broadcasty - requesty i releasy-----------------------------
 void Sender::broadcastWeaponRequest(weaponType w){
+    this -> incClock();
     float p = this -> getPriority();
+    this -> current_req_p = p;
 	WeaponRequest wr = { .w = w, .p = p };	
+    //Printer::print({"W_REQ", std::to_string(p)}, this -> nr);
 	size_t size = sizeof wr;
 	int N = this -> getN();
 	int nr = this -> getNr();
 	for(int i = 0; i < N; i++)
-		if (i != nr)
+		if (i != nr){
+            pthread_mutex_lock(&(this -> mpi_mutex));
 			MPI_Send(&wr, size, MPI_BYTE, i, W_REQ, MPI_COMM_WORLD);
+            pthread_mutex_unlock(&mpi_mutex);
+        }
 	return;
 }
 
-
-//---------------------------Broadcasty - requesty i releasy-----------------------------
 void Sender::broadcastWeaponRelease(weaponType w) {
-	WeaponRelease wr = { .w = w };
+    this -> incClock();
+    float p = this -> getPriority();
+	WeaponRelease wr = { .w = w, .p = p };
 	size_t size = sizeof wr;
 	int N = this -> getN();
 	int nr = this -> getNr();
-    printf("%d\n", N);
-    Printer::print({"release weapon"}, nr);
+    //Printer::print({"W_REL", Printer::weapon2str(w)}, this -> nr);
 	for(int i = 0; i < N; i++)
-		if (i != nr)
+		if (i != nr){
+            //Printer::print({"wr to", std::to_string(i)}, nr);
+            pthread_mutex_lock(&mpi_mutex);
 			MPI_Send(&wr, size, MPI_BYTE, i, W_REL, MPI_COMM_WORLD);
+            pthread_mutex_unlock(&mpi_mutex);
+        }
 	this -> sendWeaponPermission(w);
 	return;
 }	
 
 
 void Sender::broadcastMedicRequest(){
+    this -> incClock();
     float p = this -> getPriority();
+    this -> current_req_p = p;
 	MedicRequest mr = { .p = p };	
 	size_t size = sizeof mr;
 	int N = this -> getN();
 	int nr = this -> getNr();
 	for(int i = 0; i < N; i++)
-		if (i != nr)
+		if (i != nr){
+            pthread_mutex_lock(&mpi_mutex);
 			MPI_Send(&mr, size, MPI_BYTE, i, M_REQ, MPI_COMM_WORLD);
+            pthread_mutex_unlock(&mpi_mutex);
+        }
 	return;
 }
 
 void Sender::broadcastMedicRelease() {
-	MedicRelease mr = {};
+    this -> incClock();
+    float p = this -> getPriority();
+	MedicRelease mr = { .p = p };
 	size_t size = sizeof mr;
 	int N = this -> getN();
 	int nr = this -> getNr();
 	for(int i = 0; i < N; i++)
-		if (i != nr)
+		if (i != nr){
+            pthread_mutex_lock(&mpi_mutex);
 			MPI_Send(&mr, size, MPI_BYTE, i, M_REL, MPI_COMM_WORLD);
+            pthread_mutex_unlock(&mpi_mutex);
+        }
 	this -> sendMedicPermission();
 	return;
 }	
@@ -78,7 +101,9 @@ void Sender::broadcastMedicRelease() {
 //permissions - przeazana zmienna, do której zapiszemy zliczone zgody
 //return - łączna waga pozwoleń uzyskanych ze zliczania w tablicy
 int Sender::broadcastCenterRequest(int w, int* permissions){
+    this -> incClock();
     float p = this -> getPriority();
+    this -> current_req_p = p;
 	CenterRequest cr = { .w = w, .p = p };	
 	size_t size = sizeof cr;
 	int granted_permissions = this -> countCenterPermissions(p);
@@ -87,42 +112,64 @@ int Sender::broadcastCenterRequest(int w, int* permissions){
 	int N = this -> getN();
 	int nr = this -> getNr();
 	for(int i = 0; i < N; i++)
-		if (i != nr)
+		if (i != nr){
+            pthread_mutex_lock(&mpi_mutex);
 			MPI_Send(&cr, size, MPI_BYTE, i, C_REQ, MPI_COMM_WORLD);
+            pthread_mutex_unlock(&mpi_mutex);
+        }
 	return granted_permissions;
 }
 
 //w - waga upolowanego bandersnatcha
 void Sender::broadcastCenterRelease(int w) {
-	CenterRelease cr = { .w = w };
+    this -> incClock();
+    float p = this -> getPriority();
+	CenterRelease cr = { .w = w, .p = p };
 	size_t size = sizeof cr;
 	int N = this -> getN();
 	int nr = this -> getNr();
 	for(int i = 0; i < N; i++)
-		if (i != nr)
+		if (i != nr){
+            pthread_mutex_lock(&mpi_mutex);
 			MPI_Send(&cr, size, MPI_BYTE, i, C_REL, MPI_COMM_WORLD);
+            pthread_mutex_unlock(&mpi_mutex);
+        }
 	this -> sendCenterPermission(w);
 	return;
 }	
 
 
 void Sender::broadcastDeathMsg(weaponType w) {
-	DeathMsg dm = { .w = w };
+    this -> incClock();
+    float p = this -> getPriority();
+	DeathMsg dm = { .w = w, .p = p };
 	size_t size = sizeof dm;
 	int N = this -> getN();
 	int nr = this -> getNr();
 	for(int i = 0; i < N; i++)
-		if (i != nr)
+		if (i != nr){
+            pthread_mutex_lock(&mpi_mutex);
 			MPI_Send(&dm, size, MPI_BYTE, i, DEATH, MPI_COMM_WORLD);
+            pthread_mutex_unlock(&mpi_mutex);
+        }
 	this -> sendWeaponPermission(w);
 	return;
 }
 
 
 //------------------------------------Pomocnicze------------------------------------
+
 void Sender::incClock(){
 	pthread_mutex_lock(&(this -> clockMutex));
 	this -> clock++;
+	pthread_mutex_unlock(&(this -> clockMutex));
+}
+
+void Sender::setClock(float p){ //the other process' priority
+    int clka = this -> getClock();
+    int clkb = (int) p;
+	pthread_mutex_lock(&(this -> clockMutex));
+	double clock = (clka > clkb ? clka : clkb) + 1; 
 	pthread_mutex_unlock(&(this -> clockMutex));
 }
 
@@ -134,7 +181,11 @@ int Sender::getClock(){
 }
 
 double Sender::getPriority(){
-        return this -> getClock() + (double)this->nr/this->N;
+    return this -> getClock() + (double)this->nr/this->N;
+}
+
+double Sender::getCurrentReqP(){
+    return this -> current_req_p;
 }
 
 
@@ -154,8 +205,9 @@ void Sender::sendWeaponPermission(weaponType w, int nr) {
 
         for (auto it = iwr -> begin(); it != iwr -> end(); it++){
             std::pair<int, weaponType> req = *it;
-            int nr = req.first; weaponType req_w = req.second;
+            nr = req.first; weaponType req_w = req.second;
             if (w == req_w){
+                //Printer::print({"swp to", std::to_string(nr)}, this -> nr);
                 iwr -> erase(it);
                 break;
             }
@@ -164,8 +216,13 @@ void Sender::sendWeaponPermission(weaponType w, int nr) {
 
     }
 
-	int temp = 1;
-        MPI_Send(&temp, 1, MPI_INT, nr, W_PER, MPI_COMM_WORLD);
+    this -> incClock();
+    float p = this -> getPriority();
+	WeaponPermission wp = { .p = p };
+	size_t size = sizeof wp;
+    pthread_mutex_lock(&mpi_mutex);
+    MPI_Send(&wp, size, MPI_BYTE, nr, W_PER, MPI_COMM_WORLD);
+    pthread_mutex_unlock(&mpi_mutex);
 	return;
 }
 
@@ -177,13 +234,18 @@ void Sender::sendMedicPermission(int nr) {
             pthread_mutex_unlock(&(this -> imrMutex));
             return;
         }
-        int nr = this->ignoredMedicRequests -> front();
+        nr = this->ignoredMedicRequests -> front();
         this -> ignoredWeaponRequests -> pop_front();
         pthread_mutex_unlock(&(this -> imrMutex));
 
     }
-	int temp = 1;
-        MPI_Send(&temp, 1, MPI_INT, nr, M_PER, MPI_COMM_WORLD);
+    this -> incClock();
+    float p = this -> getPriority();
+	MedicPermission mp = { .p = p };
+	size_t size = sizeof mp;
+    pthread_mutex_lock(&mpi_mutex);
+    MPI_Send(&mp, size, MPI_BYTE, nr, M_PER, MPI_COMM_WORLD);
+    pthread_mutex_unlock(&mpi_mutex);
 	return;
 }
 
@@ -196,13 +258,17 @@ void Sender::sendCenterPermission(int permission_weight, int nr) {
             pthread_mutex_unlock(&(this -> icrMutex));
             return;
         }
-        int nr = this->ignoredCenterRequests -> front();
+        nr = this->ignoredCenterRequests -> front();
         this -> ignoredCenterRequests -> pop_front();
         pthread_mutex_unlock(&(this -> icrMutex));
     }
-
-	int temp = permission_weight;
-        MPI_Send(&temp, 1, MPI_INT, nr, C_PER, MPI_COMM_WORLD);
+    this -> incClock();
+    float p = this -> getPriority();
+	CenterPermission cp = { .w = permission_weight, .p = p };
+	size_t size = sizeof cp;
+    pthread_mutex_lock(&mpi_mutex);
+    MPI_Send(&cp, size, MPI_BYTE, nr, C_PER, MPI_COMM_WORLD);
+    pthread_mutex_unlock(&mpi_mutex);
 	return;
 }
 
@@ -215,8 +281,11 @@ int Sender::countCenterPermissions(float my_p){
 	pthread_mutex_lock(&(this -> crMutex));
 	for(int i = 0; i < this -> N; i++){
 		cr = this -> centerRequests[i];
-		if (cr -> second < my_p )
-			sum += W_MAX - cr -> first;
+        if(cr != nullptr){
+            if (cr -> second < my_p ){
+                sum += W_MAX - cr -> first;
+            }
+        }
 	}
 	pthread_mutex_unlock(&(this -> crMutex));
 	return sum;
@@ -278,7 +347,4 @@ void Sender::removeIgnoredCenterRequest(int nr){
     this -> centerRequests[nr] = nullptr;
     pthread_mutex_unlock(&(this -> crMutex));
 }
-
-
-//TODO: update clock
 

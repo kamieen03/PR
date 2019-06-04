@@ -12,6 +12,7 @@ private:
 	int nr;		//numer procesu
 	int N;		//liczba procesów w systemie
 	int clock;
+    double current_req_p;
 
 	//listy na zigonorowane żądania (FIFO)
 	std::list<std::pair<int, weaponType>>* ignoredWeaponRequests;   //wektor na żądania o broń (nr procesu i 'K' lub 'M')
@@ -28,6 +29,7 @@ private:
 
 
 public:
+    pthread_mutex_t mpi_mutex;
 	void sendWeaponPermission(weaponType, int nr = -1);		    //wysyłane do jednego procesu wraz z WeponRelease
 	void sendMedicPermission(int nr = -1);				        //wysyłane do jednego procesu wraz z MedicRelease
 	void sendCenterPermission(int perm_weight, int nr = -1);	//wysyłane do jednego procesu wraz z CenterRelease
@@ -36,8 +38,10 @@ public:
 	int getNr() { return this -> nr; }
 	int getN() { return this -> N; }
 	void incClock();
+    void setClock(float p);
 	int getClock();
 	double getPriority();
+    double getCurrentReqP();
 
 	Sender(int size, int nr);
 	void broadcastWeaponRequest(weaponType w);

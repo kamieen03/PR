@@ -16,16 +16,16 @@ private:
     template <class T> void receive(T* data, MPI_Status* status);
 
     void handleWeaponRequest(WeaponRequest msg, int sourceRank);
-    void handleWeaponPermission();
-    void handleWeaponRelease(int sourceRank);
+    void handleWeaponPermission(WeaponPermission);
+    void handleWeaponRelease(WeaponRelease, int sourceRank);
 
     void handleMedicRequest(MedicRequest msg, int sourceRank);
-    void handleMedicPermission();
-    void handleMedicRelease(int sourceRank);
+    void handleMedicPermission(MedicPermission);
+    void handleMedicRelease(MedicRelease, int sourceRank);
 
     void handleCenterRequest(CenterRequest msg, int sourceRank);
-    void handleCenterPermission(int weight);
-    void handleCenterRelease(int sourceRank);
+    void handleCenterPermission(CenterPermission);
+    void handleCenterRelease(CenterRelease, int sourceRank);
 
     void handleDeath(DeathMsg msg);
 
