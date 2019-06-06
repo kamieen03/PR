@@ -20,11 +20,15 @@ weaponType Hunter::drawNewWeaponType(){
 }
 
 void Hunter::setWeapon(weaponType w){
+    this -> receiver -> lock_state(true);
 	this -> weapon = w;
+    this -> receiver -> lock_state(false);
 }
 
 void Hunter::setState(State s){
+    this -> receiver -> lock_weapon(true);
 	this -> currentState = s;
+    this -> receiver -> lock_weapon(false);
 }
 
 void Hunter::start(){

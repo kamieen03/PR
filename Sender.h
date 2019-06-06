@@ -26,6 +26,7 @@ private:
     pthread_mutex_t icrMutex;
     pthread_mutex_t crMutex;
     pthread_mutex_t clockMutex;
+    pthread_mutex_t current_req_p_mutex;
 
 
 public:
@@ -42,6 +43,7 @@ public:
 	int getClock();
 	double getPriority();
     double getCurrentReqP();
+    void lock_current_req_p(bool);
 
 	Sender(int size, int nr);
 	void broadcastWeaponRequest(weaponType w);

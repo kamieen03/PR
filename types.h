@@ -56,6 +56,13 @@ typedef struct DeathMsg {
     float p;
 } DeathMsg;
 
+typedef struct MSG {
+    weaponType w;   //broń
+    float p;        //priorytet
+    int weight;     //waga bandersnatcha
+    int permission_weight;  //waga pozwoloenia dla CenterPermission
+} MSG;
+
 
 //deklaracje kodowań wiadomości
 const int W_REQ = 100;

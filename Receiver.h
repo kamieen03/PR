@@ -12,25 +12,30 @@ private:
 	Sender *sender;
 	bool isRunning;
 	pthread_mutex_t *sleep_mutex;
+	pthread_mutex_t STATE_MUTEX; 
+	pthread_mutex_t WEAPON_MUTEX;
 
-    template <class T> void receive(T* data, MPI_Status* status);
+    void receive(MSG* data, MPI_Status* status);
 
-    void handleWeaponRequest(WeaponRequest msg, int sourceRank);
-    void handleWeaponPermission(WeaponPermission);
-    void handleWeaponRelease(WeaponRelease, int sourceRank);
+    void handleWeaponRequest(MSG msg, int sourceRank);
+    void handleWeaponPermission(MSG);
+    void handleWeaponRelease(MSG, int sourceRank);
 
-    void handleMedicRequest(MedicRequest msg, int sourceRank);
-    void handleMedicPermission(MedicPermission);
-    void handleMedicRelease(MedicRelease, int sourceRank);
+    void handleMedicRequest(MSG msg, int sourceRank);
+    void handleMedicPermission(MSG);
+    void handleMedicRelease(MSG, int sourceRank);
 
-    void handleCenterRequest(CenterRequest msg, int sourceRank);
-    void handleCenterPermission(CenterPermission);
-    void handleCenterRelease(CenterRelease, int sourceRank);
+    void handleCenterRequest(MSG msg, int sourceRank);
+    void handleCenterPermission(MSG);
+    void handleCenterRelease(MSG, int sourceRank);
 
-    void handleDeath(DeathMsg msg);
+    void handleDeath(MSG msg);
 
 public:
     Receiver(int N, int *permissions, weaponType *wType, State *state, Sender *sender, pthread_mutex_t *sleep_mutex);
 	void* run(void*);
     void stopReceiving();
+
+    void lock_state(bool);
+    void lock_weapon(bool);
 };

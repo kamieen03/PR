@@ -26,11 +26,14 @@ void Sender::broadcastWeaponRequest(weaponType w){
     this -> incClock();
     float p = this -> getPriority();
     this -> current_req_p = p;
-	WeaponRequest wr = { .w = w, .p = p };	
+	MSG wr;
+    wr.w = w; wr.p = p;
+	//WeaponRequest wr = { .w = w, .p = p };	
     //Printer::print({"W_REQ", std::to_string(p)}, this -> nr);
 	size_t size = sizeof wr;
 	int N = this -> getN();
 	int nr = this -> getNr();
+    //std::cout << "send " << size << std::endl;
 	for(int i = 0; i < N; i++)
 		if (i != nr){
             pthread_mutex_lock(&(this -> mpi_mutex));
@@ -43,11 +46,14 @@ void Sender::broadcastWeaponRequest(weaponType w){
 void Sender::broadcastWeaponRelease(weaponType w) {
     this -> incClock();
     float p = this -> getPriority();
-	WeaponRelease wr = { .w = w, .p = p };
+	//WeaponRelease wr = { .w = w, .p = p };
+	MSG wr;
+    wr.w = w; wr.p = p;
 	size_t size = sizeof wr;
 	int N = this -> getN();
 	int nr = this -> getNr();
     //Printer::print({"W_REL", Printer::weapon2str(w)}, this -> nr);
+    //std::cout << "send " << size << std::endl;
 	for(int i = 0; i < N; i++)
 		if (i != nr){
             //Printer::print({"wr to", std::to_string(i)}, nr);
@@ -64,10 +70,13 @@ void Sender::broadcastMedicRequest(){
     this -> incClock();
     float p = this -> getPriority();
     this -> current_req_p = p;
-	MedicRequest mr = { .p = p };	
+	//MedicRequest mr = { .p = p };	
+	MSG mr;
+    mr.p = p;
 	size_t size = sizeof mr;
 	int N = this -> getN();
 	int nr = this -> getNr();
+    //std::cout << "send " << size << std::endl;
 	for(int i = 0; i < N; i++)
 		if (i != nr){
             pthread_mutex_lock(&mpi_mutex);
@@ -80,7 +89,9 @@ void Sender::broadcastMedicRequest(){
 void Sender::broadcastMedicRelease() {
     this -> incClock();
     float p = this -> getPriority();
-	MedicRelease mr = { .p = p };
+    MSG mr;
+    mr.p = p;
+	//MedicRelease mr = { .p = p };
 	size_t size = sizeof mr;
 	int N = this -> getN();
 	int nr = this -> getNr();
@@ -104,7 +115,9 @@ int Sender::broadcastCenterRequest(int w, int* permissions){
     this -> incClock();
     float p = this -> getPriority();
     this -> current_req_p = p;
-	CenterRequest cr = { .w = w, .p = p };	
+	MSG cr;
+    cr.weight = w; cr.p = p;
+	//CenterRequest cr = { .w = w, .p = p };	
 	size_t size = sizeof cr;
 	int granted_permissions = this -> countCenterPermissions(p);
 	*permissions = granted_permissions;
@@ -124,7 +137,9 @@ int Sender::broadcastCenterRequest(int w, int* permissions){
 void Sender::broadcastCenterRelease(int w) {
     this -> incClock();
     float p = this -> getPriority();
-	CenterRelease cr = { .w = w, .p = p };
+	MSG cr;
+    cr.weight = w; cr.p = p;
+	//CenterRelease cr = { .w = w, .p = p };
 	size_t size = sizeof cr;
 	int N = this -> getN();
 	int nr = this -> getNr();
@@ -142,10 +157,13 @@ void Sender::broadcastCenterRelease(int w) {
 void Sender::broadcastDeathMsg(weaponType w) {
     this -> incClock();
     float p = this -> getPriority();
-	DeathMsg dm = { .w = w, .p = p };
+	MSG dm;
+    dm.w = w; dm.p = p;
+	//DeathMsg dm = { .w = w, .p = p };
 	size_t size = sizeof dm;
 	int N = this -> getN();
 	int nr = this -> getNr();
+    //std::cout << "send " << size << std::endl;
 	for(int i = 0; i < N; i++)
 		if (i != nr){
             pthread_mutex_lock(&mpi_mutex);
@@ -188,6 +206,13 @@ double Sender::getCurrentReqP(){
     return this -> current_req_p;
 }
 
+void Sender::lock_current_req_p(bool val){
+    if(val)
+        pthread_mutex_lock(&(this->current_req_p_mutex));
+    else
+        pthread_mutex_unlock(&(this->current_req_p_mutex));
+}
+
 
 
 
@@ -207,8 +232,8 @@ void Sender::sendWeaponPermission(weaponType w, int nr) {
             std::pair<int, weaponType> req = *it;
             nr = req.first; weaponType req_w = req.second;
             if (w == req_w){
-                //Printer::print({"swp to", std::to_string(nr)}, this -> nr);
-                iwr -> erase(it);
+                Printer::print({"swp to", std::to_string(nr)}, this -> nr);
+
                 break;
             }
         }
@@ -218,9 +243,13 @@ void Sender::sendWeaponPermission(weaponType w, int nr) {
 
     this -> incClock();
     float p = this -> getPriority();
-	WeaponPermission wp = { .p = p };
+	MSG wp;
+    wp.p = p;
+	//WeaponPermission wp = { .p = p };
 	size_t size = sizeof wp;
     pthread_mutex_lock(&mpi_mutex);
+    //std::cout << "send " << size << std::endl;
+    //Printer::print({"Weapon permission for", std::to_string(nr)}, this -> nr);
     MPI_Send(&wp, size, MPI_BYTE, nr, W_PER, MPI_COMM_WORLD);
     pthread_mutex_unlock(&mpi_mutex);
 	return;
@@ -241,7 +270,9 @@ void Sender::sendMedicPermission(int nr) {
     }
     this -> incClock();
     float p = this -> getPriority();
-	MedicPermission mp = { .p = p };
+	MSG mp;
+    mp.p = p;
+	//MedicPermission mp = { .p = p };
 	size_t size = sizeof mp;
     pthread_mutex_lock(&mpi_mutex);
     MPI_Send(&mp, size, MPI_BYTE, nr, M_PER, MPI_COMM_WORLD);
@@ -264,7 +295,9 @@ void Sender::sendCenterPermission(int permission_weight, int nr) {
     }
     this -> incClock();
     float p = this -> getPriority();
-	CenterPermission cp = { .w = permission_weight, .p = p };
+	MSG cp;
+    cp.permission_weight = permission_weight; cp.p = p;
+	//CenterPermission cp = { .w = permission_weight, .p = p };
 	size_t size = sizeof cp;
     pthread_mutex_lock(&mpi_mutex);
     MPI_Send(&cp, size, MPI_BYTE, nr, C_PER, MPI_COMM_WORLD);
