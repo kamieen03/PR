@@ -86,11 +86,8 @@ void Hunter::getHospitalized(){
 
 int Hunter::requestCenter(){
 	int w = this -> randomWeight();
-    printf("1\n");
 	this -> sender -> broadcastWeaponRelease(this -> weapon);
-    printf("2\n");
 	this -> sender -> broadcastCenterRequest(w, permissions);
-    printf("3\n");
     pthread_mutex_lock(& this -> sleep_mutex); //czekamy na wakeup od wątku komunikacyjnego
     pthread_mutex_lock(& this -> sleep_mutex);
     pthread_mutex_unlock(& this -> sleep_mutex);

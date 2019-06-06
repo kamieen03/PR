@@ -22,42 +22,23 @@ void* Receiver::run(void* args){
     MSG* msg = new MSG;
 
     while(isRunning) {
-        //pthread_mutex_lock(&(this -> sender -> mpi_mutex));
         MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD,  &status);
-        //pthread_mutex_unlock(&(this -> sender -> mpi_mutex));
-        //if( !flag) continue;
-
-        //Printer::print({std::to_string(status.MPI_TAG), std::to_string(status.MPI_SOURCE),
-          //  std::to_string(this->sender->getClock())}, this -> sender -> getNr());
-
         this -> receive(msg, &status);
         switch(status.MPI_TAG) {
             case W_REQ:
                 this -> handleWeaponRequest(*msg, status.MPI_SOURCE);
-                //Printer::print({Printer::state2str(*state), "- WEAPON REQUEST na ", Printer::weapon2str(*(this->wType))}, status.MPI_SOURCE);
-                break;
-            case W_REL:
-                this -> handleWeaponRelease(*msg, status.MPI_SOURCE);
-                //Printer::print({Printer::state2str(*state), "- WEAPON RELEASE na ", Printer::weapon2str(*wType)}, status.MPI_SOURCE);
                 break;
             case W_PER:
                 this -> handleWeaponPermission(*msg);
-                //Printer::print({Printer::state2str(*state), "- WEAPON PERMISSION na ", Printer::weapon2str(*wType)}, status.MPI_SOURCE);
                 break;
             case M_REQ:
                 this -> handleMedicRequest(*msg, status.MPI_SOURCE);
-                break;
-            case M_REL:
-                this -> handleMedicRelease(*msg, status.MPI_SOURCE);
                 break;
             case M_PER:
                 this -> handleMedicPermission(*msg);
                 break;
             case C_REQ:
                 this -> handleCenterRequest(*msg, status.MPI_SOURCE);
-                break;
-            case C_REL:
-                this -> handleCenterRelease(*msg, status.MPI_SOURCE);
                 break;
             case C_PER:
                 this -> handleCenterPermission(*msg);
@@ -74,7 +55,6 @@ void* Receiver::run(void* args){
 
 void Receiver::receive(MSG* data, MPI_Status* status) {
     pthread_mutex_lock(&(this -> sender -> mpi_mutex));
-    //std :: cout << "receive " <<  (sizeof (data)) << " " << sizeof(MSG) << std::endl;
     MPI_Recv(data, sizeof(MSG), MPI_BYTE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, status);
     pthread_mutex_unlock(&(this -> sender -> mpi_mutex));
 }
@@ -87,7 +67,6 @@ void Receiver::stopReceiving() {
 // WEAPON
 void Receiver::handleWeaponRequest(MSG msg, int sourceRank) {
     this -> sender -> setClock(msg.p);
-
     this -> sender -> lock_current_req_p(true);
     this -> lock_state(true);
     this -> lock_weapon(true);
@@ -98,35 +77,38 @@ void Receiver::handleWeaponRequest(MSG msg, int sourceRank) {
     this -> sender -> lock_current_req_p(false);
     this -> lock_state(false);
     this -> lock_weapon(false);
-        //Printer::print({"handle wreq", std::to_string(sourceRank), std::to_string(priority), std::to_string(msg.p), 
-        //std::to_string(a), std::to_string(b), std::to_string(c), std::to_string(this->sender->getClock())}, this -> sender ->       getNr());
+        Printer::print({"handle wreq", std::to_string(sourceRank), std::to_string(priority), std::to_string(msg.p), 
+        std::to_string(a), std::to_string(b), std::to_string(c), std::to_string(this->sender->getClock())}, this -> sender ->       getNr());
 
+    //send permission to request of priority p
     if(a or b or c){
-        this->sender->sendWeaponPermission(msg.w, sourceRank);
+        this->sender->sendWeaponPermission(sourceRank, msg.p);
     }else {
-        this->sender->ignoreWeaponRequest(std::make_pair(sourceRank, msg.w));
+        this->sender->ignoreWeaponRequest(std::make_pair(sourceRank, msg.p));
     }
 }
 
 void Receiver::handleWeaponPermission(MSG msg) {
-    int WEAPON_NUMBER = (*(this -> wType) == KARABIN) ? K_MAX : M_MAX;
     this -> sender -> setClock(msg.p);
+    if(msg.req_p != this -> sender -> getCurrentReqP() or
+        !(this -> sender-> waitingForPermissions)) return;
+    int WEAPON_NUMBER = (*(this -> wType) == KARABIN) ? K_MAX : M_MAX;
 
     (*permissions)++;
 
-        Printer::print({"handle wper", std::to_string(*permissions)}, this -> sender -> getNr());
+        Printer::print({"handle wper", std::to_string(*permissions), std::to_string(this->P - WEAPON_NUMBER),
+            std::to_string(msg.req_p), std::to_string(this->sender->getCurrentReqP())}, this -> sender -> getNr());
     if(*permissions >= this->P - WEAPON_NUMBER) {
         *permissions = 0;
+        this -> sender -> waitingForPermissions = false;
         pthread_mutex_unlock(sleep_mutex);
     }
-
-
 }
 
-void Receiver::handleWeaponRelease(MSG msg, int sourceRank) {
-    this -> sender -> setClock(msg.p);
-    this->sender->removeIgnoredWeaponRequest(sourceRank);
-}
+//void Receiver::handleWeaponRelease(MSG msg, int sourceRank) {
+//    this -> sender -> setClock(msg.p);
+//    this->sender->removeIgnoredWeaponRequest(sourceRank);
+//}
 
 
 // MEDIC
@@ -140,27 +122,34 @@ void Receiver::handleMedicRequest(MSG msg, int sourceRank) {
     bool b = !(*(this->state) == INJURED or *(this->state) == HOSPITALIZED);
     this -> sender -> lock_current_req_p(false);
     this -> lock_state(false);
+        Printer::print({"handle mreq", std::to_string(sourceRank), std::to_string(priority), std::to_string(msg.p), 
+        std::to_string(a), std::to_string(b), std::to_string(this->sender->getClock())}, this -> sender -> getNr());
 
     if(a or b)
-        this->sender->sendMedicPermission(sourceRank);
+        this->sender->sendMedicPermission(sourceRank, msg.p);
     else 
-        this->sender->ignoreMedicRequest(sourceRank);
+        this->sender->ignoreMedicRequest(std::make_pair(sourceRank, msg.p));
 }
 
 void Receiver::handleMedicPermission(MSG msg) {
     this -> sender -> setClock(msg.p);
+    if(msg.req_p != this -> sender -> getCurrentReqP() or 
+        !(this -> sender-> waitingForPermissions)) return;
     (*permissions)++;
+        Printer::print({"handle mper", std::to_string(*permissions), std::to_string(this->P - S_MAX),
+            std::to_string(msg.req_p), std::to_string(this->sender->getCurrentReqP())}, this -> sender -> getNr());
 
     if(*permissions >= this->P - S_MAX) {
+        this -> sender -> waitingForPermissions = false;
         *permissions = 0;
         pthread_mutex_unlock(sleep_mutex);
     }
 }
 
-void Receiver::handleMedicRelease(MSG msg, int sourceRank) {
-    this -> sender -> setClock(msg.p);
-    this->sender->removeIgnoredMedicRequest(sourceRank);
-}
+//void Receiver::handleMedicRelease(MSG msg, int sourceRank) {
+//    this -> sender -> setClock(msg.p);
+//    this->sender->removeIgnoredMedicRequest(sourceRank);
+//}
 
 
 // CENTER
@@ -175,27 +164,33 @@ void Receiver::handleCenterRequest(MSG msg, int sourceRank) {
     this -> sender -> lock_current_req_p(false);
     this -> lock_state(false);
 
-    this -> sender -> setCenterRequest(sourceRank, std::make_pair(msg.w, msg.p));
+    this -> sender -> setCenterRequest(sourceRank, std::make_pair(msg.weight, msg.p));
     if (a or b)
-        this->sender->sendCenterPermission(W_MAX, sourceRank);
+        this->sender->sendCenterPermission(W_MAX, sourceRank, msg.p);
     else
-        this->sender->ignoreCenterRequest(sourceRank);
+        this->sender->ignoreCenterRequest(std::make_pair(sourceRank, msg.p));
 }
 
 void Receiver::handleCenterPermission(MSG msg){
-    this -> sender -> setClock(msg.p);
-    *permissions += msg.w;
+    if(msg.req_p != this -> sender -> getCurrentReqP() or
+        !(this -> sender-> waitingForPermissions)) return;
 
+    this -> sender -> setClock(msg.p);
+    *permissions += msg.permission_weight;
+
+        //Printer::print({"handle cper", std::to_string(*permissions), std::to_string(this->P*W_MAX - T_MAX),
+          //  std::to_string(msg.req_p), std::to_string(this->sender->getCurrentReqP())}, this -> sender -> getNr());
     if(*permissions >= this->P * W_MAX - T_MAX) {
+        this -> sender -> waitingForPermissions = false;
         *permissions = 0;
         pthread_mutex_unlock(sleep_mutex);
     }
 }
 
-void Receiver::handleCenterRelease(MSG msg, int sourceRank) {
-    this -> sender -> setClock(msg.p);
-    this->sender->removeIgnoredCenterRequest(sourceRank);
-}
+//void Receiver::handleCenterRelease(MSG msg, int sourceRank) {
+//    this -> sender -> setClock(msg.p);
+//    this->sender->removeIgnoredCenterRequest(sourceRank);
+//}
 
 
 // DEATH

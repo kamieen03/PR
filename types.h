@@ -61,19 +61,17 @@ typedef struct MSG {
     float p;        //priorytet
     int weight;     //waga bandersnatcha
     int permission_weight;  //waga pozwoloenia dla CenterPermission
+    float req_p;              //wykorzystywane przy wiadomości zwrotnej - priorytet oryginalnej wiadomości
 } MSG;
 
 
 //deklaracje kodowań wiadomości
 const int W_REQ = 100;
-const int W_REL = 101;
-const int W_PER = 102;
+const int W_PER = 101;
 const int M_REQ = 200;
-const int M_REL = 201;
-const int M_PER = 202;
+const int M_PER = 201;
 const int C_REQ = 300;
-const int C_REL = 301;
-const int C_PER = 302;
+const int C_PER = 301;
 const int DEATH = 404;
 
 
@@ -83,5 +81,5 @@ const int K_MAX = 2;	//liczba karabinów
 const int M_MAX = 2;	//liczba mieczy
 const int S_MAX = 4;	//liczba sanitariuszy
 const int W_MAX = 10;	//maksymalna waga bandersnatcha
-const int T_MAX = 20;	//pojmeność centrum
+const int T_MAX = 20;	//pojemność centrum
 

@@ -15,9 +15,9 @@ private:
     double current_req_p;
 
 	//listy na zigonorowane żądania (FIFO)
-	std::list<std::pair<int, weaponType>>* ignoredWeaponRequests;   //wektor na żądania o broń (nr procesu i 'K' lub 'M')
-	std::list<int>* ignoredMedicRequests;                           //wektor na żądania o sanitariusza (nr procesu)
-    std::list<int>* ignoredCenterRequests;                          //wektor na żądania o centrum (nr procesu)
+	std::list<std::pair<int, float>>* ignoredWeaponRequests;   //wektor na żądania o broń (nr procesu i 'K' lub 'M')
+	std::list<std::pair<int, float>>* ignoredMedicRequests;                           //wektor na żądania o sanitariusza (nr procesu)
+    std::list<std::pair<int, float>>* ignoredCenterRequests;                          //wektor na żądania o centrum (nr procesu)
     std::pair<int, float>** centerRequests;                         //tablica wskaźników na wszystkie aktualne żądania o centrum
                                                                     //(waga bandersnatcha i priorytet procesu)
     //mutexy na powyższe listy
@@ -28,12 +28,18 @@ private:
     pthread_mutex_t clockMutex;
     pthread_mutex_t current_req_p_mutex;
 
+    void broadcastWeaponPermission();
+    void broadcastMedicPermission();
+    void broadcastCenterPermission(int);
+
 
 public:
     pthread_mutex_t mpi_mutex;
-	void sendWeaponPermission(weaponType, int nr = -1);		    //wysyłane do jednego procesu wraz z WeponRelease
-	void sendMedicPermission(int nr = -1);				        //wysyłane do jednego procesu wraz z MedicRelease
-	void sendCenterPermission(int perm_weight, int nr = -1);	//wysyłane do jednego procesu wraz z CenterRelease
+    bool waitingForPermissions;
+
+	void sendWeaponPermission(int, float);		    //wysyłane do jednego procesu wraz z WeponRelease
+	void sendMedicPermission(int, float);				        //wysyłane do jednego procesu wraz z MedicRelease
+	void sendCenterPermission(int perm_weight, int nr, float);	    //wysyłane do jednego procesu wraz z CenterRelease
 	int countCenterPermissions(float p);			//zliczanie zaraz prezd wysłaniem CenterRequest
 
 	int getNr() { return this -> nr; }
@@ -54,12 +60,10 @@ public:
 	void broadcastCenterRelease(int w);
 	void broadcastDeathMsg(weaponType w);
 
-    void ignoreWeaponRequest(std::pair<int, weaponType> req);
-    void ignoreMedicRequest(int nr);
-    void ignoreCenterRequest(int nr);
+    void ignoreWeaponRequest(std::pair<int, float> req);
+    void ignoreMedicRequest(std::pair<int, float> req);
+    void ignoreCenterRequest(std::pair<int, float> req);
     void setCenterRequest(int nr, std::pair<int, float> req);
 
-    void removeIgnoredWeaponRequest(int nr);
-    void removeIgnoredMedicRequest(int nr);
-    void removeIgnoredCenterRequest(int nr);
+    void removeCenterRequest(int nr);
 };
