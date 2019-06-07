@@ -1,6 +1,5 @@
 #include "Hunter.h"
-#define forever while(1)
-#define TESTING true
+#define VERBOSE true
 
 Hunter::Hunter(int N, int nr){
 	this -> N = N;
@@ -42,8 +41,7 @@ void Hunter::start(){
 void Hunter::requestWeapon(){
 	weaponType w = this -> drawNewWeaponType();
 	this -> setWeapon(w);
-    Printer::print({Printer::state2str(this->currentState),
-        Printer::weapon2str(w)}, this->nr);
+    Printer::print({Printer::state2str(this->currentState), Printer::weapon2str(w)}, this -> nr, this -> sender -> getClock());
     if(this -> N > 1){
         this -> sender -> broadcastWeaponRequest(w);
         pthread_mutex_lock(& this -> sleep_mutex); //czekamy na wakeup od wątku komunikacyjnego
@@ -51,8 +49,7 @@ void Hunter::requestWeapon(){
         pthread_mutex_unlock(& this -> sleep_mutex);
     }
 	this -> setState(State(HUNTING));
-    if(TESTING) if(w == MIECZ) std::cout << "MIECZ+\n";
-                else std::cout<< "KARABIN+\n";
+    if(VERBOSE) Printer::print({Printer::weapon2str(w)+"+"}, this -> nr, this->sender->getClock());
 	return;
 }
 
@@ -61,18 +58,16 @@ State Hunter::hunt(){
 	//wylosuj kolejny stan i ustaw jako bieżący
 	int n = HUNT_DISTRIBUTION(this -> randGenerator);
 	this -> setState(static_cast<State>(n));
-    if(TESTING) if(this -> weapon == MIECZ) std::cout << "MIECZ-\n";
-                else std::cout<< "KARABIN-\n";
+    if(VERBOSE) Printer::print({Printer::weapon2str(this -> weapon)+"-"}, this -> nr, this->sender->getClock());
 	return this -> currentState;
 }	
 
 void Hunter::die(){
-	//deathMsg zawiera info o zwalnianej broni
-    if(TESTING) std::cout << "DIE\n";
 	this -> sender -> broadcastDeathMsg(this -> weapon); 
+    this -> receiver -> lockP(true);
     this -> receiver -> P--;
-    if(this -> receiver -> P == 0) return;
-    //TODO: mutex na P
+    if(this -> receiver -> P == 0) return; //it was the last living process
+    this -> receiver -> lockP(false);
     pthread_mutex_lock(& this -> sleep_mutex);
     pthread_mutex_lock(& this -> sleep_mutex);
 }
@@ -87,15 +82,14 @@ void Hunter::requestMedic(){
         pthread_mutex_unlock(& this -> sleep_mutex);
     }
 	this -> setState(State(HOSPITALIZED));
-    if(TESTING) std::cout << "HOSPITALIZED\n";
 	return;
 }
 
 void Hunter::getHospitalized(){
 	this -> randSleep();
+    if(VERBOSE) Printer::print({Printer::state2str(this->currentState)+"-"}, this -> nr, this -> sender -> getClock());
 	this -> sender -> broadcastMedicRelease();
 	this -> setState(State(WAITING_WEAPON));
-    if(TESTING) std::cout << "UNHOSPITALIZED\n";
 	return;
 }
 
@@ -108,12 +102,13 @@ int Hunter::requestCenter(){
         pthread_mutex_lock(& this -> sleep_mutex);
         pthread_mutex_unlock(& this -> sleep_mutex);
     }
-	this -> setState(State(WAITING_WEAPON));
+	this -> setState(State(IN_CENTER));
 	return w;
 }
 
 void Hunter::visitCenter(int w){
 	this -> randSleep();
+    if(VERBOSE) Printer::print({"LEAVING CENTER", "-"+std::to_string(w)}, this -> nr, this -> sender -> getClock());
 	this -> sender -> broadcastCenterRelease(w);
 	this -> setState(State(WAITING_WEAPON));
 	return;
@@ -125,7 +120,7 @@ int Hunter::randomWeight(){
 }
 
 void Hunter::randSleep(){
-	//sleep between 3 to 7 seconds
+	//sleep between a and b seconds
 	//with 1 milisecond resolution
 	int a = 1; int b = 2;
 
@@ -137,13 +132,13 @@ void Hunter::randSleep(){
 }
 
 void Hunter::mainLoop(){
-    int w = -1;
+    int w = -1;     //bandersnatch weight
     bool alive = true;
     while(alive){
         this -> sender -> incClock();
         switch(this -> currentState) {
             case NEW: 
-                Printer::print({Printer::state2str(this->currentState)}, this -> nr);
+                Printer::print({Printer::state2str(this->currentState)}, this -> nr, this -> sender -> getClock());
                 this -> start();
                 break;
             case WAITING_WEAPON:
@@ -151,32 +146,32 @@ void Hunter::mainLoop(){
                 break;
             case HUNTING:
                 Printer::print({Printer::state2str(this->currentState),
-                    Printer::weapon2str(this->weapon)}, this->nr);
+                    Printer::weapon2str(this->weapon)}, this->nr, this -> sender -> getClock());
                 this -> hunt();
                 break;
             case INJURED:
-                Printer::print({Printer::state2str(this->currentState)}, this -> nr);
+                Printer::print({Printer::state2str(this->currentState)}, this -> nr, this -> sender -> getClock());
                 this -> requestMedic();
                 break;
             case DEAD:
-                Printer::print({Printer::state2str(this->currentState)}, this -> nr);
+                Printer::print({Printer::state2str(this->currentState)}, this -> nr, this -> sender -> getClock());
                 alive = false;
                 this -> die();
                 break;
             case HOSPITALIZED:
-                Printer::print({Printer::state2str(this->currentState)}, this -> nr);
+                Printer::print({Printer::state2str(this->currentState)+"+"}, this -> nr, this -> sender -> getClock());
                 this -> getHospitalized();
                 break;
             case WAITING_CENTER:
-                Printer::print({Printer::state2str(this->currentState)}, this -> nr);
+                Printer::print({Printer::state2str(this->currentState)}, this -> nr, this -> sender -> getClock());
                 w = this -> requestCenter();
                 break;
             case IN_CENTER:
-                Printer::print({Printer::state2str(this->currentState)}, this -> nr);
+                Printer::print({Printer::state2str(this->currentState), "+"+std::to_string(w)}, this -> nr, this -> sender -> getClock());
                 this -> visitCenter(w);
                 break;
         }
     }
-    Printer::print({"FINISH"}, this -> nr);
+    Printer::print({"FINISH"}, this -> nr, this -> sender -> getClock());
 	return;
 }

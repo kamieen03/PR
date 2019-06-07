@@ -1,8 +1,8 @@
 #include "Printer.h"
-#define OFF true
-void Printer::print(const std::list<std::string> args, int nr){
+#define OFF false
+void Printer::print(const std::list<std::string> args, int nr, int clock){
     if(OFF) return;
-    printf("\033[1;3%dmProcess %d: ", nr, nr);
+    printf("\033[1;3%dmProcess %d at %d: ", nr, nr, clock);
     for(auto &msg: args)
         std::cout << msg << " ";
     std::cout << std::endl;

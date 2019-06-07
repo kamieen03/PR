@@ -13,6 +13,7 @@ Receiver::Receiver(int N, int *permissions, weaponType *wType, State *state, Sen
 
     this->STATE_MUTEX = PTHREAD_MUTEX_INITIALIZER;
     this->WEAPON_MUTEX = PTHREAD_MUTEX_INITIALIZER;
+    this->P_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 }
 
 //zakładamy, że poścmierci Huntera, Receiver wciąż operuje (by móc w końcu wykryć zakończenie)
@@ -45,7 +46,10 @@ void* Receiver::run(void* args){
                 this -> handleCenterRequest(*msg, status.MPI_SOURCE);
                 break;
             case C_PER:
-                this -> handleCenterPermission(*msg);
+                this -> handleCenterPermission(*msg, status.MPI_SOURCE);
+                break;
+            case C_REL:
+                this -> handleCenterRelease(*msg, status.MPI_SOURCE);
                 break;
             case DEATH:
                 this -> handleDeath(*msg);
@@ -71,6 +75,7 @@ void Receiver::stopReceiving() {
 // WEAPON
 void Receiver::handleWeaponRequest(MSG msg, int sourceRank) {
     this -> sender -> setClock(msg.p);
+
     this -> sender -> lock_current_req_p(true);
     this -> lock_state(true);
     this -> lock_weapon(true);
@@ -100,8 +105,9 @@ void Receiver::handleWeaponPermission(MSG msg) {
 
     (*permissions)++;
 
-        //Printer::print({"handle wper", std::to_string(*permissions), std::to_string(this->N - WEAPON_NUMBER),
-          //  std::to_string(msg.req_p), std::to_string(this->sender->getCurrentReqP())}, this -> sender -> getNr());
+        //Printer::print({"handle wper", std::to_string(*permissions), std::to_string(this->sender->getN() - WEAPON_NUMBER),
+          //  std::to_string(msg.req_p), std::to_string(this->sender->getCurrentReqP())}, this -> sender -> getNr(),
+            //    this ->sender->getClock());
     if(*permissions >= this->sender ->getN() - WEAPON_NUMBER) {
         *permissions = 0;
         this -> sender -> waitingForPermissions = false;
@@ -159,6 +165,7 @@ void Receiver::handleMedicPermission(MSG msg) {
 // CENTER
 void Receiver::handleCenterRequest(MSG msg, int sourceRank) {
     this -> sender -> setClock(msg.p);
+    //Printer::print({"handle creq", std::to_string(this->sender->getClock())}, this -> sender -> getNr());
 
     this -> sender -> lock_current_req_p(true);
     this -> lock_state(true);
@@ -175,15 +182,15 @@ void Receiver::handleCenterRequest(MSG msg, int sourceRank) {
         this->sender->ignoreCenterRequest(std::make_pair(sourceRank, msg.p));
 }
 
-void Receiver::handleCenterPermission(MSG msg){
+void Receiver::handleCenterPermission(MSG msg, int sourceRank){
+    this -> sender -> setClock(msg.p);
     if(msg.req_p != this -> sender -> getCurrentReqP() or
         !(this -> sender-> waitingForPermissions)) return;
 
-    this -> sender -> setClock(msg.p);
     *permissions += msg.permission_weight;
 
-        //Printer::print({"handle cper", std::to_string(*permissions), std::to_string(this->N*W_MAX - T_MAX),
-          //  std::to_string(msg.req_p), std::to_string(this->sender->getCurrentReqP())}, this -> sender -> getNr());
+        //Printer::print({"handle cper", std::to_string(*permissions), std::to_string(this->sender->getN()*W_MAX - T_MAX),
+            //std::to_string(sourceRank)}, this -> sender -> getNr());
     if(*permissions >= this->sender->getN() * W_MAX - T_MAX) {
         this -> sender -> waitingForPermissions = false;
         *permissions = 0;
@@ -191,21 +198,22 @@ void Receiver::handleCenterPermission(MSG msg){
     }
 }
 
-//void Receiver::handleCenterRelease(MSG msg, int sourceRank) {
-//    this -> sender -> setClock(msg.p);
-//    this->sender->removeIgnoredCenterRequest(sourceRank);
-//}
+void Receiver::handleCenterRelease(MSG msg, int sourceRank) {
+    this -> sender -> setClock(msg.p);
+    this->sender->removeCenterRequest(sourceRank);
+}
 
 
 // DEATH
 void Receiver::handleDeath(MSG msg) {
     this -> sender -> setClock(msg.p);
+    this -> lockP(true);
     (this->P)--;
     if(this -> P == 0){ 
         this -> stopReceiving();
         pthread_mutex_unlock(this -> sleep_mutex);
     }
-
+    this -> lockP(false);
 }
 
 
@@ -222,4 +230,11 @@ void Receiver::lock_weapon(bool val){
         pthread_mutex_lock(&(this->WEAPON_MUTEX));
     else
         pthread_mutex_unlock(&(this->WEAPON_MUTEX));
+}
+
+void Receiver::lockP(bool val){
+    if(val)
+        pthread_mutex_lock(&(this->P_MUTEX));
+    else
+        pthread_mutex_unlock(&(this->P_MUTEX));
 }

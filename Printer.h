@@ -9,7 +9,7 @@
 
 class Printer{
 public:
-    static void print(const std::list<std::string> args, int nr);
+    static void print(const std::list<std::string> args, int nr, int clock);
     static std::string state2str(enum State);
     static std::string weapon2str(enum weaponType);
 };

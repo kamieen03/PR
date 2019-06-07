@@ -93,20 +93,19 @@ int Sender::broadcastCenterRequest(int w, int* permissions){
     this -> current_req_p = p;
     this -> lock_current_req_p(false);
     this -> waitingForPermissions = true;
-    //Printer::print({std::to_string(p)}, this -> nr);
+    //Printer::print({"creq", std::to_string(p)}, this -> nr);
 	int granted_permissions = this -> countCenterPermissions(p);
 	*permissions = granted_permissions;
 
 	MSG cr;
     cr.weight = w; cr.p = p;
-	size_t size = sizeof cr;
 
 	int N = this -> getN();
 	int nr = this -> getNr();
 	for(int i = 0; i < N; i++)
 		if (i != nr){
             pthread_mutex_lock(&(this -> mpi_mutex));
-			MPI_Send(&cr, size, MPI_BYTE, i, C_REQ, MPI_COMM_WORLD);
+			MPI_Send(&cr, MSG_SIZE, MPI_BYTE, i, C_REQ, MPI_COMM_WORLD);
             pthread_mutex_unlock(&(this -> mpi_mutex));
         }
 	return granted_permissions;
@@ -114,6 +113,20 @@ int Sender::broadcastCenterRequest(int w, int* permissions){
 
 //w - waga upolowanego bandersnatcha
 void Sender::broadcastCenterRelease(int w) {
+    this -> incClock();
+    MSG cr;
+    float p = this -> getPriority();
+    cr.p = p;
+
+	int N = this -> getN();
+    int nr = this -> getNr();
+    for(int i = 0; i < N; i++)
+        if(i != nr){
+            pthread_mutex_lock(&(this -> mpi_mutex));
+			MPI_Send(&cr, MSG_SIZE, MPI_BYTE, i, C_REL, MPI_COMM_WORLD);
+            pthread_mutex_unlock(&(this -> mpi_mutex));
+        }
+
 	this -> broadcastCenterPermission(w);
 	return;
 }	
@@ -143,7 +156,7 @@ void Sender::broadcastDeathMsg(weaponType w) {
 
 void Sender::incClock(){
 	pthread_mutex_lock(&(this -> clockMutex));
-	this -> clock++;
+	(this -> clock)++;
 	pthread_mutex_unlock(&(this -> clockMutex));
 }
 
@@ -151,7 +164,7 @@ void Sender::setClock(float p){ //the other process' priority
     int clka = this -> getClock();
     int clkb = (int) p;
 	pthread_mutex_lock(&(this -> clockMutex));
-	double clock = (clka > clkb ? clka : clkb) + 1; 
+	this -> clock = (clka > clkb ? clka : clkb) + 1; 
 	pthread_mutex_unlock(&(this -> clockMutex));
 }
 
@@ -304,7 +317,7 @@ int Sender::countCenterPermissions(float my_p){
 		cr = this -> centerRequests[i];
         if(cr != nullptr){
             if (cr -> second < my_p ){
-                sum += W_MAX - cr -> first;
+                sum += W_MAX - (cr -> first);
             }
         }
 	}
@@ -335,6 +348,7 @@ void Sender::ignoreCenterRequest(std::pair<int, float> req){
 
 void Sender::setCenterRequest(int nr, std::pair<int, float> req){
     pthread_mutex_lock(&(this -> crMutex));
+    //Printer::print({"set creq", std::to_string(nr), std::to_string(req.first)}, this -> nr);
     this -> centerRequests[nr] = new std::pair<int, float> (req);
     pthread_mutex_unlock(&(this -> crMutex));
 }
@@ -343,6 +357,7 @@ void Sender::setCenterRequest(int nr, std::pair<int, float> req){
 
 void Sender::removeCenterRequest(int nr){
     pthread_mutex_lock(&(this -> crMutex));
+    //Printer::print({"c_rel", std::to_string(nr)}, this -> nr);
     this -> centerRequests[nr] = nullptr;
     pthread_mutex_unlock(&(this -> crMutex));
 }
