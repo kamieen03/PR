@@ -15,6 +15,10 @@ Receiver::Receiver(int N, int *permissions, weaponType *wType, State *state, Sen
     this->WEAPON_MUTEX = PTHREAD_MUTEX_INITIALIZER;
 }
 
+//zakładamy, że poścmierci Huntera, Receiver wciąż operuje (by móc w końcu wykryć zakończenie)
+//gdyby REceiver nie operował po ścierci Huntera, należałoby zmienić N na P w funkcjach
+//handlePermission
+
 void* Receiver::run(void* args){
     MPI_Status status;
     isRunning = true;
@@ -77,8 +81,8 @@ void Receiver::handleWeaponRequest(MSG msg, int sourceRank) {
     this -> sender -> lock_current_req_p(false);
     this -> lock_state(false);
     this -> lock_weapon(false);
-        Printer::print({"handle wreq", std::to_string(sourceRank), std::to_string(priority), std::to_string(msg.p), 
-        std::to_string(a), std::to_string(b), std::to_string(c), std::to_string(this->sender->getClock())}, this -> sender ->       getNr());
+        //Printer::print({"handle wreq", std::to_string(sourceRank), std::to_string(priority), std::to_string(msg.p), 
+            //std::to_string(a), std::to_string(b), std::to_string(c), std::to_string(this->sender->getClock())}, this -> sender ->       getNr());
 
     //send permission to request of priority p
     if(a or b or c){
@@ -96,9 +100,9 @@ void Receiver::handleWeaponPermission(MSG msg) {
 
     (*permissions)++;
 
-        Printer::print({"handle wper", std::to_string(*permissions), std::to_string(this->P - WEAPON_NUMBER),
-            std::to_string(msg.req_p), std::to_string(this->sender->getCurrentReqP())}, this -> sender -> getNr());
-    if(*permissions >= this->P - WEAPON_NUMBER) {
+        //Printer::print({"handle wper", std::to_string(*permissions), std::to_string(this->N - WEAPON_NUMBER),
+          //  std::to_string(msg.req_p), std::to_string(this->sender->getCurrentReqP())}, this -> sender -> getNr());
+    if(*permissions >= this->sender ->getN() - WEAPON_NUMBER) {
         *permissions = 0;
         this -> sender -> waitingForPermissions = false;
         pthread_mutex_unlock(sleep_mutex);
@@ -122,8 +126,8 @@ void Receiver::handleMedicRequest(MSG msg, int sourceRank) {
     bool b = !(*(this->state) == INJURED or *(this->state) == HOSPITALIZED);
     this -> sender -> lock_current_req_p(false);
     this -> lock_state(false);
-        Printer::print({"handle mreq", std::to_string(sourceRank), std::to_string(priority), std::to_string(msg.p), 
-        std::to_string(a), std::to_string(b), std::to_string(this->sender->getClock())}, this -> sender -> getNr());
+        //Printer::print({"handle mreq", std::to_string(sourceRank), std::to_string(priority), std::to_string(msg.p), 
+        //std::to_string(a), std::to_string(b), std::to_string(this->sender->getClock())}, this -> sender -> getNr());
 
     if(a or b)
         this->sender->sendMedicPermission(sourceRank, msg.p);
@@ -136,10 +140,10 @@ void Receiver::handleMedicPermission(MSG msg) {
     if(msg.req_p != this -> sender -> getCurrentReqP() or 
         !(this -> sender-> waitingForPermissions)) return;
     (*permissions)++;
-        Printer::print({"handle mper", std::to_string(*permissions), std::to_string(this->P - S_MAX),
-            std::to_string(msg.req_p), std::to_string(this->sender->getCurrentReqP())}, this -> sender -> getNr());
+        //Printer::print({"handle mper", std::to_string(*permissions), std::to_string(this->N - S_MAX),
+          //  std::to_string(msg.req_p), std::to_string(this->sender->getCurrentReqP())}, this -> sender -> getNr());
 
-    if(*permissions >= this->P - S_MAX) {
+    if(*permissions >= this->sender -> getN() - S_MAX) {
         this -> sender -> waitingForPermissions = false;
         *permissions = 0;
         pthread_mutex_unlock(sleep_mutex);
@@ -178,9 +182,9 @@ void Receiver::handleCenterPermission(MSG msg){
     this -> sender -> setClock(msg.p);
     *permissions += msg.permission_weight;
 
-        //Printer::print({"handle cper", std::to_string(*permissions), std::to_string(this->P*W_MAX - T_MAX),
+        //Printer::print({"handle cper", std::to_string(*permissions), std::to_string(this->N*W_MAX - T_MAX),
           //  std::to_string(msg.req_p), std::to_string(this->sender->getCurrentReqP())}, this -> sender -> getNr());
-    if(*permissions >= this->P * W_MAX - T_MAX) {
+    if(*permissions >= this->sender->getN() * W_MAX - T_MAX) {
         this -> sender -> waitingForPermissions = false;
         *permissions = 0;
         pthread_mutex_unlock(sleep_mutex);
@@ -197,10 +201,15 @@ void Receiver::handleCenterPermission(MSG msg){
 void Receiver::handleDeath(MSG msg) {
     this -> sender -> setClock(msg.p);
     (this->P)--;
+    if(this -> P == 0){ 
+        this -> stopReceiving();
+        pthread_mutex_unlock(this -> sleep_mutex);
+    }
+
 }
 
-//helpers================================================
 
+//helpers================================================
 void Receiver::lock_state(bool val){
     if(val)
         pthread_mutex_lock(&(this->STATE_MUTEX));

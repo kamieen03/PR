@@ -1,5 +1,7 @@
 #include "Printer.h"
+#define OFF true
 void Printer::print(const std::list<std::string> args, int nr){
+    if(OFF) return;
     printf("\033[1;3%dmProcess %d: ", nr, nr);
     for(auto &msg: args)
         std::cout << msg << " ";

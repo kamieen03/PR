@@ -6,7 +6,6 @@
 class Receiver {
 private:
     int *permissions;
-    int P;
     weaponType *wType;
 	State *state;
 	Sender *sender;
@@ -32,6 +31,8 @@ private:
     void handleDeath(MSG msg);
 
 public:
+    int P;
+
     Receiver(int N, int *permissions, weaponType *wType, State *state, Sender *sender, pthread_mutex_t *sleep_mutex);
 	void* run(void*);
     void stopReceiving();

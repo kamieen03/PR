@@ -1,6 +1,6 @@
 #include "Hunter.h"
 #define forever while(1)
-
+#define TESTING true
 
 Hunter::Hunter(int N, int nr){
 	this -> N = N;
@@ -44,11 +44,15 @@ void Hunter::requestWeapon(){
 	this -> setWeapon(w);
     Printer::print({Printer::state2str(this->currentState),
         Printer::weapon2str(w)}, this->nr);
-	this -> sender -> broadcastWeaponRequest(w);
-    pthread_mutex_lock(& this -> sleep_mutex); //czekamy na wakeup od wątku komunikacyjnego
-    pthread_mutex_lock(& this -> sleep_mutex);
-    pthread_mutex_unlock(& this -> sleep_mutex);
+    if(this -> N > 1){
+        this -> sender -> broadcastWeaponRequest(w);
+        pthread_mutex_lock(& this -> sleep_mutex); //czekamy na wakeup od wątku komunikacyjnego
+        pthread_mutex_lock(& this -> sleep_mutex);
+        pthread_mutex_unlock(& this -> sleep_mutex);
+    }
 	this -> setState(State(HUNTING));
+    if(TESTING) if(w == MIECZ) std::cout << "MIECZ+\n";
+                else std::cout<< "KARABIN+\n";
 	return;
 }
 
@@ -57,23 +61,33 @@ State Hunter::hunt(){
 	//wylosuj kolejny stan i ustaw jako bieżący
 	int n = HUNT_DISTRIBUTION(this -> randGenerator);
 	this -> setState(static_cast<State>(n));
+    if(TESTING) if(this -> weapon == MIECZ) std::cout << "MIECZ-\n";
+                else std::cout<< "KARABIN-\n";
 	return this -> currentState;
 }	
 
 void Hunter::die(){
 	//deathMsg zawiera info o zwalnianej broni
+    if(TESTING) std::cout << "DIE\n";
 	this -> sender -> broadcastDeathMsg(this -> weapon); 
-	pause();	//the final pause
+    this -> receiver -> P--;
+    if(this -> receiver -> P == 0) return;
+    //TODO: mutex na P
+    pthread_mutex_lock(& this -> sleep_mutex);
+    pthread_mutex_lock(& this -> sleep_mutex);
 }
 
 
 void Hunter::requestMedic(){
 	this -> sender -> broadcastWeaponRelease(this -> weapon);
-	this -> sender -> broadcastMedicRequest();
-    pthread_mutex_lock(& this -> sleep_mutex); //czekamy na wakeup od wątku komunikacyjnego
-    pthread_mutex_lock(& this -> sleep_mutex);
-    pthread_mutex_unlock(& this -> sleep_mutex);
+    if(this -> N > 1){
+        this -> sender -> broadcastMedicRequest();
+        pthread_mutex_lock(& this -> sleep_mutex); //czekamy na wakeup od wątku komunikacyjnego
+        pthread_mutex_lock(& this -> sleep_mutex);
+        pthread_mutex_unlock(& this -> sleep_mutex);
+    }
 	this -> setState(State(HOSPITALIZED));
+    if(TESTING) std::cout << "HOSPITALIZED\n";
 	return;
 }
 
@@ -81,17 +95,19 @@ void Hunter::getHospitalized(){
 	this -> randSleep();
 	this -> sender -> broadcastMedicRelease();
 	this -> setState(State(WAITING_WEAPON));
+    if(TESTING) std::cout << "UNHOSPITALIZED\n";
 	return;
 }
 
 int Hunter::requestCenter(){
 	int w = this -> randomWeight();
 	this -> sender -> broadcastWeaponRelease(this -> weapon);
-	this -> sender -> broadcastCenterRequest(w, permissions);
-    pthread_mutex_lock(& this -> sleep_mutex); //czekamy na wakeup od wątku komunikacyjnego
-    pthread_mutex_lock(& this -> sleep_mutex);
-    pthread_mutex_unlock(& this -> sleep_mutex);
-
+    if(this -> N > 1){
+        this -> sender -> broadcastCenterRequest(w, permissions);
+        pthread_mutex_lock(& this -> sleep_mutex); //czekamy na wakeup od wątku komunikacyjnego
+        pthread_mutex_lock(& this -> sleep_mutex);
+        pthread_mutex_unlock(& this -> sleep_mutex);
+    }
 	this -> setState(State(WAITING_WEAPON));
 	return w;
 }
@@ -122,13 +138,13 @@ void Hunter::randSleep(){
 
 void Hunter::mainLoop(){
     int w = -1;
-    forever{
+    bool alive = true;
+    while(alive){
         this -> sender -> incClock();
         switch(this -> currentState) {
             case NEW: 
                 Printer::print({Printer::state2str(this->currentState)}, this -> nr);
                 this -> start();
-                sleep(1);
                 break;
             case WAITING_WEAPON:
                 this -> requestWeapon();
@@ -144,6 +160,7 @@ void Hunter::mainLoop(){
                 break;
             case DEAD:
                 Printer::print({Printer::state2str(this->currentState)}, this -> nr);
+                alive = false;
                 this -> die();
                 break;
             case HOSPITALIZED:
@@ -160,5 +177,6 @@ void Hunter::mainLoop(){
                 break;
         }
     }
+    Printer::print({"FINISH"}, this -> nr);
 	return;
 }
