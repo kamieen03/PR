@@ -1,0 +1,12 @@
+digraph {
+    "Nowy" -> "Oczekiwanie na bron"
+    "Oczekiwanie na bron" -> "Polowanie"
+    "Polowanie" -> "Zgon";
+    "Polowanie" -> "Ranny";
+    "Ranny" -> "Hospitalizacja";
+    "Hospitalizacja" -> "Oczekiwanie na bron";
+    "Polowanie" -> "Oczekiwanie na centrum";
+    "Oczekiwanie na centrum" -> "W centrum";
+    "W centrum" -> "Oczekiwanie na bron";
+}
+

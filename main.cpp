@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
 
     srand(rank*1337 + time(NULL));
 	initialize_hunter(size, rank);
+    Printer::print({"Before Finalize"}, rank, 0);
     MPI_Finalize();
-
 	return 0;
 }

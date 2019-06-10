@@ -86,8 +86,6 @@ void Receiver::handleWeaponRequest(MSG msg, int sourceRank) {
     this -> sender -> lock_current_req_p(false);
     this -> lock_state(false);
     this -> lock_weapon(false);
-        //Printer::print({"handle wreq", std::to_string(sourceRank), std::to_string(priority), std::to_string(msg.p), 
-            //std::to_string(a), std::to_string(b), std::to_string(c), std::to_string(this->sender->getClock())}, this -> sender ->       getNr());
 
     //send permission to request of priority p
     if(a or b or c){
@@ -105,20 +103,12 @@ void Receiver::handleWeaponPermission(MSG msg) {
 
     (*permissions)++;
 
-        //Printer::print({"handle wper", std::to_string(*permissions), std::to_string(this->sender->getN() - WEAPON_NUMBER),
-          //  std::to_string(msg.req_p), std::to_string(this->sender->getCurrentReqP())}, this -> sender -> getNr(),
-            //    this ->sender->getClock());
     if(*permissions >= this->sender ->getN() - WEAPON_NUMBER) {
         *permissions = 0;
         this -> sender -> waitingForPermissions = false;
         pthread_mutex_unlock(sleep_mutex);
     }
 }
-
-//void Receiver::handleWeaponRelease(MSG msg, int sourceRank) {
-//    this -> sender -> setClock(msg.p);
-//    this->sender->removeIgnoredWeaponRequest(sourceRank);
-//}
 
 
 // MEDIC
@@ -132,8 +122,6 @@ void Receiver::handleMedicRequest(MSG msg, int sourceRank) {
     bool b = !(*(this->state) == INJURED or *(this->state) == HOSPITALIZED);
     this -> sender -> lock_current_req_p(false);
     this -> lock_state(false);
-        //Printer::print({"handle mreq", std::to_string(sourceRank), std::to_string(priority), std::to_string(msg.p), 
-        //std::to_string(a), std::to_string(b), std::to_string(this->sender->getClock())}, this -> sender -> getNr());
 
     if(a or b)
         this->sender->sendMedicPermission(sourceRank, msg.p);
@@ -146,8 +134,6 @@ void Receiver::handleMedicPermission(MSG msg) {
     if(msg.req_p != this -> sender -> getCurrentReqP() or 
         !(this -> sender-> waitingForPermissions)) return;
     (*permissions)++;
-        //Printer::print({"handle mper", std::to_string(*permissions), std::to_string(this->N - S_MAX),
-          //  std::to_string(msg.req_p), std::to_string(this->sender->getCurrentReqP())}, this -> sender -> getNr());
 
     if(*permissions >= this->sender -> getN() - S_MAX) {
         this -> sender -> waitingForPermissions = false;
@@ -156,16 +142,11 @@ void Receiver::handleMedicPermission(MSG msg) {
     }
 }
 
-//void Receiver::handleMedicRelease(MSG msg, int sourceRank) {
-//    this -> sender -> setClock(msg.p);
-//    this->sender->removeIgnoredMedicRequest(sourceRank);
-//}
 
 
 // CENTER
 void Receiver::handleCenterRequest(MSG msg, int sourceRank) {
     this -> sender -> setClock(msg.p);
-    //Printer::print({"handle creq", std::to_string(this->sender->getClock())}, this -> sender -> getNr());
 
     this -> sender -> lock_current_req_p(true);
     this -> lock_state(true);
@@ -189,8 +170,6 @@ void Receiver::handleCenterPermission(MSG msg, int sourceRank){
 
     *permissions += msg.permission_weight;
 
-        //Printer::print({"handle cper", std::to_string(*permissions), std::to_string(this->sender->getN()*W_MAX - T_MAX),
-            //std::to_string(sourceRank)}, this -> sender -> getNr());
     if(*permissions >= this->sender->getN() * W_MAX - T_MAX) {
         this -> sender -> waitingForPermissions = false;
         *permissions = 0;
